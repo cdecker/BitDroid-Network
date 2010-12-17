@@ -9,6 +9,14 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
 public class PeerAddress extends Message {
 	private long services;
 	private byte reserved[] = new byte[12];
+	byte[] getReserved() {
+		return reserved;
+	}
+
+	void setReserved(byte[] reserved) {
+		this.reserved = reserved;
+	}
+
 	private InetAddress address;
 	private int port;
 	
@@ -74,9 +82,7 @@ public class PeerAddress extends Message {
 		leos.writeLong(services);
 		leos.write(reserved);
 		leos.write(address.getAddress());
-		//leos.writeUnsi
-		
-		throw new RuntimeException("Not yet implemented");
+		leos.write(new byte[]{(byte)(port & 0xFF >> 8),(byte)(port & 0xFF)});
 	}
 
 }

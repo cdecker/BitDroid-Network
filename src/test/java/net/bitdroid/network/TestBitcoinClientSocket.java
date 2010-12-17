@@ -2,10 +2,13 @@ package net.bitdroid.network;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
 import net.bitdroid.network.wire.LittleEndianInputStream;
+import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 import org.junit.Test;
 
@@ -48,7 +51,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertFalse("Checksum is set not yet enabled on the socket", s.checksumAvailable);
 	}
 	
-//	@Test
+	@Test
 	public void testReadAddress() throws IOException {
 		LittleEndianInputStream leis = new LittleEndianInputStream(ClassLoader.getSystemResourceAsStream("address.dump"));
 		PeerAddress a = new PeerAddress(null);
@@ -57,5 +60,21 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(1, a.getServices());
 		assertEquals(36747, a.getPort());
 	}
-
+	
+	@Test
+	public void testWriteAddress() throws IOException {
+		PeerAddress a = new PeerAddress(null);
+		a.setAddress(InetAddress.getByName("213.200.193.129"));
+		a.setServices(1);
+		a.setPort(36747);
+		a.setReserved(new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0xFF,(byte)0xFF});
+		byte b[] = new byte[26];
+		LittleEndianOutputStream leos = LittleEndianOutputStream.wrap(b);
+		a.toWire(leos);
+		byte c[] = new byte[26];
+		ClassLoader.getSystemResourceAsStream("address.dump").read(c);
+		assert(Arrays.equals(c, b));
+	}
 }

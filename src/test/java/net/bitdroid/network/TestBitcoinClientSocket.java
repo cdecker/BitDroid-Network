@@ -74,7 +74,10 @@ public class TestBitcoinClientSocket extends TestCase {
 		LittleEndianOutputStream leos = LittleEndianOutputStream.wrap(b);
 		a.toWire(leos);
 		byte c[] = new byte[26];
+		System.out.println(c);
 		ClassLoader.getSystemResourceAsStream("address.dump").read(c);
+		System.out.println(b);
+		System.out.println(c);
 		assert(Arrays.equals(c, b));
 	}
 }

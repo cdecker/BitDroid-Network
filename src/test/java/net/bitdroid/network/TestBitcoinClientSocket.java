@@ -46,7 +46,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		VersionMessage m = (VersionMessage)s.readMessage();
 		assert(m instanceof VersionMessage);
 		assertEquals(m.getSize(), 85);
-		assertEquals(212, m.getProtocolVersion());
+		assertEquals(31700, m.getProtocolVersion());
 		assertEquals(1291726049, m.getTimestamp());
 		assertFalse("Checksum is set not yet enabled on the socket", s.checksumAvailable);
 	}
@@ -58,7 +58,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		a.read(leis);
 		assertEquals("/213.200.193.129", a.getAddress().toString());
 		assertEquals(1, a.getServices());
-		assertEquals(36747, a.getPort());
+		assertEquals(35727, a.getPort());
 	}
 	
 	@Test
@@ -75,8 +75,6 @@ public class TestBitcoinClientSocket extends TestCase {
 		a.toWire(leos);
 		byte c[] = new byte[26];
 		ClassLoader.getSystemResourceAsStream("address.dump").read(c);
-		System.out.println(b);
-		System.out.println(c);
 		assert(Arrays.equals(c, b));
 	}
 }

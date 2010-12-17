@@ -74,7 +74,7 @@ public class PeerAddress extends Message {
 		in.read(b);
 		setAddress(InetAddress.getByAddress(b));
 		// Port uses network byte order, goddamn mix of ordering...
-		setPort((((in.readUnsignedByte() & 0xFF) << 8) | (in.readUnsignedByte() & 0xFF)));
+		setPort(in.readUnsignedShort());
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class PeerAddress extends Message {
 		leos.writeLong(services);
 		leos.write(reserved);
 		leos.write(address.getAddress());
-		leos.write(new byte[]{(byte)(port >> 8 & 0xFF),(byte)(port & 0xFF)});
+		leos.writeUnsignedShort(port);
 	}
 
 }

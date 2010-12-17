@@ -35,7 +35,7 @@ public class VersionMessage extends Message {
 	void read(LittleEndianInputStream in) throws IOException {
 		// Read the actual version
 		setProtocolVersion(in.readUnsignedInt());
-		if(getProtocolVersion() < 209)
+		if(getProtocolVersion() < 20900)
 			throw new IOException("Unsupported client version.");
 		in.read(localServices);
 		// We ignore that it's unsigned because the highest bit is not 1

@@ -68,6 +68,9 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 		written += length;
 	}
 
+	public void writeUnsignedShort(int s) throws IOException{
+		write(new byte[]{(byte)(s >> 8 & 0xFF),(byte)(s & 0xFF)});
+	}
 
 	/**
 	 * Writes a <code>boolean</code> to the underlying output stream as 

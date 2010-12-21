@@ -9,6 +9,7 @@ import junit.framework.TestCase;
 
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
+import net.bitdroid.util.HexDump;
 
 import org.junit.Test;
 
@@ -38,32 +39,30 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadVersionMessage() throws IOException {
-		/**
-		 * This packet was captured 12 / 07 / 10 @ 6:47:29am 
-		 * with version number 212.
-		 */
-		BitcoinClientSocket s = prepareWithDump("bitcoin-version-0.dump");
+		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
 		VersionMessage m = (VersionMessage)s.readMessage();
 		assert(m instanceof VersionMessage);
 		assertEquals(m.getSize(), 85);
 		assertEquals(31700, m.getProtocolVersion());
-		assertEquals(1291726049, m.getTimestamp());
+		assertEquals(1292970988, m.getTimestamp());
 		assertFalse("Checksum is set not yet enabled on the socket", s.checksumAvailable);
+		assertEquals("/87.118.94.169", m.getYourAddress().getAddress().toString());
+		assertEquals("/213.200.193.129", m.getMyAddress().getAddress().toString());
 	}
 	
 	@Test
 	public void testReadAddress() throws IOException {
 		LittleEndianInputStream leis = new LittleEndianInputStream(ClassLoader.getSystemResourceAsStream("address.dump"));
-		PeerAddress a = new PeerAddress(null);
+		PeerAddress a = new PeerAddress((BitcoinClientSocket)null);
 		a.read(leis);
 		assertEquals("/213.200.193.129", a.getAddress().toString());
 		assertEquals(1, a.getServices());
-		assertEquals(35727, a.getPort());
+		assertEquals(36747, a.getPort());
 	}
 	
 	@Test
 	public void testWriteAddress() throws IOException {
-		PeerAddress a = new PeerAddress(null);
+		PeerAddress a = new PeerAddress((BitcoinClientSocket)null);
 		a.setAddress(InetAddress.getByName("213.200.193.129"));
 		a.setServices(1);
 		a.setPort(36747);
@@ -75,6 +74,12 @@ public class TestBitcoinClientSocket extends TestCase {
 		a.toWire(leos);
 		byte c[] = new byte[26];
 		ClassLoader.getSystemResourceAsStream("address.dump").read(c);
-		assert(Arrays.equals(c, b));
+		for(byte bt : b)
+			System.out.print((int)bt);
+		System.out.println();
+		for(byte ct : c)
+			System.out.print((int)ct);
+		System.out.println();
+		assertTrue(Arrays.equals(c, b));
 	}
 }

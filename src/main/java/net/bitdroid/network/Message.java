@@ -9,6 +9,10 @@ public abstract class Message {
 	private int size;
 	protected BitcoinClientSocket clientSocket;
 	
+	Message(LittleEndianInputStream in) throws IOException{
+		this.read(in);
+	}
+	
 	public Message(BitcoinClientSocket clientSocket){
 		this.clientSocket = clientSocket;
 	}

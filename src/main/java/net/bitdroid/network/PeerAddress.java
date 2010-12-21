@@ -8,7 +8,7 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public class PeerAddress extends Message {
 	private long services;
-	private byte reserved[] = new byte[12];
+	private byte reserved[];
 	byte[] getReserved() {
 		return reserved;
 	}
@@ -19,6 +19,10 @@ public class PeerAddress extends Message {
 
 	private InetAddress address;
 	private int port;
+	
+	PeerAddress(LittleEndianInputStream in) throws IOException{
+		super(in);
+	}
 	
 	public PeerAddress(BitcoinClientSocket clientSocket) {
 		super(clientSocket);
@@ -69,12 +73,16 @@ public class PeerAddress extends Message {
 	@Override
 	void read(LittleEndianInputStream in) throws IOException {
 		setServices(in.readLong());
+		reserved = new byte[12];
 		in.read(reserved);
 		byte[] b = new byte[4];
 		in.read(b);
 		setAddress(InetAddress.getByAddress(b));
 		// Port uses network byte order, goddamn mix of ordering...
-		setPort(in.readUnsignedShort());
+		b = new byte[2];
+		in.read(b);
+		setPort((b[0] & 0xFF) << 8 | (b[1] & 0xFF));
+		//setPort(in.readUnsignedShort());
 	}
 
 	@Override
@@ -82,7 +90,7 @@ public class PeerAddress extends Message {
 		leos.writeLong(services);
 		leos.write(reserved);
 		leos.write(address.getAddress());
-		leos.writeUnsignedShort(port);
+		leos.write(new byte[]{(byte)(port >> 8 & 0xFF), (byte)(port & 0xFF)});
 	}
 
 }

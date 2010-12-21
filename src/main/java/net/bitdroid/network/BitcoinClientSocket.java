@@ -18,6 +18,15 @@ public class BitcoinClientSocket implements Runnable {
 	protected boolean dirty = false;
 	protected boolean checksumAvailable = false;
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
+	protected long nonce;
+
+	long getNonce() {
+		return nonce;
+	}
+
+	void setNonce(long nonce) {
+		this.nonce = nonce;
+	}
 
 	/**
 	 * Constructor wrapping the actual socket.

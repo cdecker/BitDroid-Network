@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.bitdroid.network;
+package net.bitdroid.network.wire;
 
 import static org.junit.Assert.*;
 

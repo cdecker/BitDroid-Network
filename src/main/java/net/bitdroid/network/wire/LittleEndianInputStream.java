@@ -22,9 +22,9 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	public int readUnsignedShort() throws IOException{
-		int byte1 = in.read();
-		int byte2 = in.read();
-		return (byte2 & 0xFF) << 8 | (byte1 & 0xFF);  
+		byte b[] = new byte[2];
+		read(b);
+		return (b[1] & 0xFF) << 8 | (b[0] & 0xFF);  
 	}
 
 	public long readUnsignedInt() throws IOException {
@@ -40,6 +40,25 @@ public class LittleEndianInputStream extends FilterInputStream {
 		return new BigInteger(1, b);
 	}
 
+	public long readVariableSize() throws IOException{
+		int b = readUnsignedByte();
+        if(b == 255){
+        	throw new RuntimeException("I was never expecting a length of UInt64, please slap the developer.");
+	}else if(b == 254){
+        	return readUnsignedInt();
+        }else if(b == 253)
+        	return readUnsignedShort();
+        else
+        	return b;
+	}
+	
+	public String readString() throws IOException{
+		long length = readVariableSize();
+		byte[] b = new byte[(int) length];
+		in.read(b);
+		return new String(b);
+	}
+	
 	/**
 	 * Reverse a byte array.
 	 * @param b
@@ -69,7 +88,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 	public boolean readBoolean() throws IOException {
 
 		int bool = in.read();
-		if (bool == -1) throw new EOFException();
 		return (bool != 0);
 
 	}
@@ -86,7 +104,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 	public byte readByte(int b) throws IOException {
 
 		int temp = in.read();
-		if (temp == -1) throw new EOFException();
 		return (byte) temp;
 
 	}
@@ -103,7 +120,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 	public int readUnsignedByte() throws IOException {
 
 		int temp = in.read();
-		if (temp == -1) throw new EOFException();
 		return temp;
 
 	}
@@ -118,13 +134,10 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
 	public short readShort() throws IOException {
-
-		short byte1 = (short) in.read();
-		short byte2 = (short) in.read();
-		// only need to test last byte read
-		// if byte1 is -1 so is byte2
-		if (byte2 == -1) throw new EOFException();
-		return (short) (((byte2 & 0xFF) << 8) + (byte1 & 0xFF));
+		short b[] = new short[2];
+		b[0] = (short) in.read();
+		b[1] = (short) in.read();
+		return (short) (((b[1] & 0xFF) << 8) + (b[0] & 0xFF));
 
 	}
 
@@ -160,7 +173,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 
 		int byte1 = in.read();
 		int byte2 = in.read();
-		if (byte2 == -1) throw new EOFException();
 		return (char) (((byte2 << 24) >>> 16) + ((byte1 << 24) >>> 24));
 
 	}
@@ -211,9 +223,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 		long byte6 = in.read();
 		long byte7 = in.read();
 		long byte8 = in.read();
-		if (byte8 == -1) {
-			throw new EOFException();
-		}
 		return (byte8 << 56) 
 		+ ((byte7 << 56) >>> 8) 
 		+ ((byte6 << 56) >>> 16) 

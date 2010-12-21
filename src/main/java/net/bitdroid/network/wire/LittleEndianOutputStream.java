@@ -2,7 +2,6 @@ package net.bitdroid.network.wire;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
 import java.nio.ByteBuffer;
@@ -69,7 +68,10 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	public void writeUnsignedShort(int s) throws IOException{
-		write(new byte[]{(byte)(s >> 8 & 0xFF),(byte)(s & 0xFF)});
+		byte b[] = new byte[2];
+		b[1] = (byte)(s >> 8 & 0xFF);
+		b[0] = (byte)(s & 0xFF);
+		write(b);
 	}
 
 	/**
@@ -193,47 +195,6 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes a string to the underlying output stream as a sequence of 
-	 * bytes. Each character is written to the data output stream as 
-	 * if by the <code>writeByte()</code> method. 
-	 *
-	 * @param      s   the <code>String</code> value to be written.
-	 * @exception  IOException  if the underlying stream throws an IOException.
-	 * @see        java.io.LittleEndianOutputStream#writeByte(int)
-	 * @see        java.io.LittleEndianOutputStream#out
-	 */
-	public void writeBytes(String s) throws IOException {
-
-		int length = s.length();
-		for (int i = 0; i < length; i++) {
-			out.write((byte) s.charAt(i));
-		}
-		written += length;
-	}
-
-	/**
-	 * Writes a string to the underlying output stream as a sequence of 
-	 * characters. Each character is written to the data output stream as 
-	 * if by the <code>writeChar</code> method. 
-	 *
-	 * @param      s   a <code>String</code> value to be written.
-	 * @exception  IOException  if the underlying stream throws an IOException.
-	 * @see        java.io.LittleEndianOutputStream#writeChar(int)
-	 * @see        java.io.LittleEndianOutputStream#out
-	 */
-	public void writeChars(String s) throws IOException {
-
-		int length = s.length();
-		for (int i = 0; i < length; i++) {
-			int c = s.charAt(i);
-			out.write(c & 0xFF);
-			out.write((c >>> 8) & 0xFF);
-		}
-		written += length * 2;
-
-	}
-
-	/**
 	 * Writes a string of no more than 65,535 characters 
 	 * to the underlying output stream using UTF-8 
 	 * encoding. This method first writes a two byte short 
@@ -297,6 +258,16 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	public int size() {
 		return this.written;
 	}
+	
+	public void writeVariableSize(long size) throws IOException {
+		// TODO Method stub, implement
+	}
+	
+	public void writeString(String s) throws IOException {
+		writeVariableSize(s.length());
+		out.write(s.getBytes());
+	}
+	
 	public static LittleEndianOutputStream wrap(final byte[] b){
 		LittleEndianOutputStream leis = new LittleEndianOutputStream(new OutputStream() {
 			ByteBuffer bb = ByteBuffer.wrap(b);

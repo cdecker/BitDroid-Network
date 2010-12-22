@@ -9,7 +9,6 @@ import junit.framework.TestCase;
 
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
-import net.bitdroid.util.HexDump;
 
 import org.junit.Test;
 

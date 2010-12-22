@@ -90,6 +90,7 @@ public class PeerAddress extends Message {
 		leos.writeLong(services);
 		leos.write(reserved);
 		leos.write(address.getAddress());
+		// Again: this is big-endian...
 		leos.write(new byte[]{(byte)(port >> 8 & 0xFF), (byte)(port & 0xFF)});
 	}
 

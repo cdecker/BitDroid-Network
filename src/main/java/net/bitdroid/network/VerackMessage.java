@@ -1,5 +1,6 @@
 package net.bitdroid.network;
 
+import net.bitdroid.network.BitcoinClientSocket.ClientState;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -14,7 +15,7 @@ public class VerackMessage extends Message {
 	void read(LittleEndianInputStream in) {
 		// This is easy, don't read anything...
 		// Just set the socket to require checksum flag
-		clientSocket.setChecksumRequired(true);
+		clientSocket.currentState = ClientState.OPEN;
 		
 	}
 

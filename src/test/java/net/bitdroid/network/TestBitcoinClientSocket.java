@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
+import net.bitdroid.network.BitcoinClientSocket.ClientState;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -33,7 +34,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		Message m = s.readMessage();
 		assert(m instanceof VerackMessage);
 		assertEquals(m.getSize(), 0);
-		assertTrue("Checksum is set on the socket", s.checksumAvailable);
+		assertTrue("Checksum is set on the socket", s.currentState == ClientState.OPEN);
 	}
 	
 	@Test
@@ -44,7 +45,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(m.getSize(), 85);
 		assertEquals(31700, m.getProtocolVersion());
 		assertEquals(1292970988, m.getTimestamp());
-		assertFalse("Checksum is set not yet enabled on the socket", s.checksumAvailable);
+		assertEquals("Checksum is set not yet enabled on the socket", ClientState.HANDSHAKE, s.currentState);
 		assertEquals("/87.118.94.169", m.getYourAddress().getAddress().toString());
 		assertEquals("/213.200.193.129", m.getMyAddress().getAddress().toString());
 	}

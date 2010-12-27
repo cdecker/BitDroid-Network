@@ -15,10 +15,13 @@ public class BitcoinClientSocket implements Runnable {
 	static final int magicInt = -642466055;
 	protected InputStream inputStream;
 	protected OutputStream outputStream;
-	protected boolean dirty = false;
-	protected boolean checksumAvailable = false;
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
 	protected long nonce;
+	
+	enum ClientState {
+	    HANDSHAKE, OPEN, SHUTDOWN
+	};
+	protected ClientState currentState = ClientState.HANDSHAKE;
 
 	long getNonce() {
 		return nonce;
@@ -56,7 +59,7 @@ public class BitcoinClientSocket implements Runnable {
 		inputStream.read(b);
 		LittleEndianInputStream leis = LittleEndianInputStream.wrap(b);
 		
-		if(checksumAvailable){
+		if(currentState != ClientState.HANDSHAKE){
 			byte[] checksum = new byte[4];
 			inputStream.read(checksum);
 			// TODO add switch to check the checksum.
@@ -78,7 +81,7 @@ public class BitcoinClientSocket implements Runnable {
 
 	public void run() {
 		try{
-			while(!dirty && isConnected()){
+			while(currentState != ClientState.SHUTDOWN && isConnected()){
 				// Read the message
 				Message mess = readMessage();
 				// React to the messages
@@ -87,16 +90,12 @@ public class BitcoinClientSocket implements Runnable {
 					listener.eventReceived(mess);
 			}
 		}catch(IOException ioe){
-			dirty = true;
+			currentState = ClientState.SHUTDOWN;
 		}finally{
 			// TODO disconnect
 		}
 	}
 
-	void setChecksumRequired(boolean required){
-		this.checksumAvailable = required;
-	}
-	
 	public boolean isConnected(){
 		return true;
 	}

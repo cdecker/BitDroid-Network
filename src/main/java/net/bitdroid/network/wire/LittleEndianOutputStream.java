@@ -73,6 +73,12 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 		b[0] = (byte)(s & 0xFF);
 		write(b);
 	}
+	
+	public void writeUnsignedInt(long v) throws IOException {
+		byte[] b = new byte[]{(byte)(v & 0xFF),(byte)(v >> 8 & 0xFF),
+				(byte)(v >> 16 & 0xFF), (byte)(v >> 24 & 0xFF)};
+		write(b);
+	}
 
 	/**
 	 * Writes a <code>boolean</code> to the underlying output stream as 
@@ -260,7 +266,12 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 	
 	public void writeVariableSize(long size) throws IOException {
-		// TODO Method stub, implement
+		if(size < 253)
+			out.write((int) size);
+		else if(size < 65535)
+			writeUnsignedShort((int) size);
+		else
+			writeUnsignedInt(size);
 	}
 	
 	public void writeString(String s) throws IOException {
@@ -269,8 +280,12 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 	
 	public static LittleEndianOutputStream wrap(final byte[] b){
+		return wrap(ByteBuffer.wrap(b));
+	}
+
+	public static LittleEndianOutputStream wrap(final ByteBuffer b){
 		LittleEndianOutputStream leis = new LittleEndianOutputStream(new OutputStream() {
-			ByteBuffer bb = ByteBuffer.wrap(b);
+			ByteBuffer bb = b;
 
 			@Override
 			public synchronized void write(int arg0) throws IOException {

@@ -41,23 +41,23 @@ public class LittleEndianInputStream extends FilterInputStream {
 
 	public long readVariableSize() throws IOException{
 		int b = readUnsignedByte();
-        if(b == 255){
-        	throw new RuntimeException("I was never expecting a length of UInt64, please slap the developer.");
-	}else if(b == 254){
-        	return readUnsignedInt();
-        }else if(b == 253)
-        	return readUnsignedShort();
-        else
-        	return b;
+		if(b == 255){
+			throw new RuntimeException("I was never expecting a length of UInt64, please slap the developer.");
+		}else if(b == 254){
+			return readUnsignedInt();
+		}else if(b == 253)
+			return readUnsignedShort();
+		else
+			return b;
 	}
-	
+
 	public String readString() throws IOException{
 		long length = readVariableSize();
 		byte[] b = new byte[(int) length];
 		in.read(b);
 		return new String(b);
 	}
-	
+
 	/**
 	 * Reverse a byte array.
 	 * @param b
@@ -244,54 +244,54 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  UTFDataFormatException if the string cannot be decoded
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
-//	public String readUTF() throws IOException {
-//
-//		int byte1 = in.read();
-//		int byte2 = in.read();
-//		if (byte2 == -1) throw new EOFException();
-//		int numbytes = (byte1 << 8) + byte2;    
-//		char result[] = new char[numbytes];
-//		int numread = 0;
-//		int numchars = 0;
-//
-//		while (numread < numbytes) {
-//
-//			int c1 = readUnsignedByte();
-//			int c2, c3;
-//
-//			// The first four bits of c1 determine how many bytes are in this char
-//			int test = c1 >> 4;
-//		if (test < 8) {  // one byte
-//			numread++;
-//			result[numchars++] = (char) c1;
-//		}
-//		else if (test == 12 || test == 13) { // two bytes
-//			numread += 2;
-//			if (numread > numbytes) throw new UTFDataFormatException(); 
-//			c2 = readUnsignedByte();
-//			if ((c2 & 0xC0) != 0x80) throw new UTFDataFormatException();     
-//			result[numchars++] = (char) (((c1 & 0x1F) << 6) | (c2 & 0x3F));
-//		}
-//		else if (test == 14) { // three bytes
-//			numread += 3;
-//			if (numread > numbytes) throw new UTFDataFormatException();    
-//			c2 = readUnsignedByte();
-//			c3 = readUnsignedByte();
-//			if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80)) {
-//				throw new UTFDataFormatException();
-//			}
-//			result[numchars++] = (char) 
-//			(((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
-//		}
-//		else { // malformed
-//			throw new UTFDataFormatException();
-//		}    
-//
-//		}  // end while
-//
-//		return new String(result, 0, numchars); 
-//
-//	}
+	//	public String readUTF() throws IOException {
+	//
+	//		int byte1 = in.read();
+	//		int byte2 = in.read();
+	//		if (byte2 == -1) throw new EOFException();
+	//		int numbytes = (byte1 << 8) + byte2;    
+	//		char result[] = new char[numbytes];
+	//		int numread = 0;
+	//		int numchars = 0;
+	//
+	//		while (numread < numbytes) {
+	//
+	//			int c1 = readUnsignedByte();
+	//			int c2, c3;
+	//
+	//			// The first four bits of c1 determine how many bytes are in this char
+	//			int test = c1 >> 4;
+	//		if (test < 8) {  // one byte
+	//			numread++;
+	//			result[numchars++] = (char) c1;
+	//		}
+	//		else if (test == 12 || test == 13) { // two bytes
+	//			numread += 2;
+	//			if (numread > numbytes) throw new UTFDataFormatException(); 
+	//			c2 = readUnsignedByte();
+	//			if ((c2 & 0xC0) != 0x80) throw new UTFDataFormatException();     
+	//			result[numchars++] = (char) (((c1 & 0x1F) << 6) | (c2 & 0x3F));
+	//		}
+	//		else if (test == 14) { // three bytes
+	//			numread += 3;
+	//			if (numread > numbytes) throw new UTFDataFormatException();    
+	//			c2 = readUnsignedByte();
+	//			c3 = readUnsignedByte();
+	//			if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80)) {
+	//				throw new UTFDataFormatException();
+	//			}
+	//			result[numchars++] = (char) 
+	//			(((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
+	//		}
+	//		else { // malformed
+	//			throw new UTFDataFormatException();
+	//		}    
+	//
+	//		}  // end while
+	//
+	//		return new String(result, 0, numchars); 
+	//
+	//	}
 
 	/**
 	 *

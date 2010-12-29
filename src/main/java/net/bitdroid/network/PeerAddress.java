@@ -94,4 +94,9 @@ public class PeerAddress extends Message {
 		leos.write(new byte[]{(byte)(port >> 8 & 0xFF), (byte)(port & 0xFF)});
 	}
 
+	@Override
+	public String getCommand() {
+		return null;
+	}
+
 }

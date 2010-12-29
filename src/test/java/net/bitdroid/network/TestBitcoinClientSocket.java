@@ -21,6 +21,12 @@ public class TestBitcoinClientSocket extends TestCase {
 		return s;
 	}
 	
+	protected byte[] readDump(String filename, int length) throws IOException{
+		byte[] buffer = new byte[length];
+		ClassLoader.getSystemResourceAsStream(filename).read(buffer);
+		return buffer;
+	}
+	
 	@Test
 	public void testReadDump() throws IOException{
 		InputStream is = ClassLoader.getSystemResourceAsStream("bitcoin-version-0.dump");
@@ -48,6 +54,20 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals("Checksum is set not yet enabled on the socket", ClientState.HANDSHAKE, s.currentState);
 		assertEquals("/87.118.94.169", m.getYourAddress().getAddress().toString());
 		assertEquals("/213.200.193.129", m.getMyAddress().getAddress().toString());
+		assertEquals("", m.getClientVersion());
+		assertEquals(98806, m.getHeight());
+	}
+	
+	@Test
+	public void testFullVersionMessageCycle() throws IOException {
+		// Read the original
+		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
+		VersionMessage m = (VersionMessage)s.readMessage();
+		byte[] buf = readDump("bitcoin-version-1.dump", 105);
+		byte[] output = new byte[105];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(m);
+		assert(Arrays.equals(buf, output));
 	}
 	
 	@Test

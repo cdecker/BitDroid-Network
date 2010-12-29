@@ -81,6 +81,15 @@ public class TestLittleEndianOutputStream {
 		leos.writeLong(s);
 		assertEquals(s, LittleEndianInputStream.wrap(b).readLong());
 	}
+	
+	@Test
+	public final void testWriteUnisgnedInt() throws IOException {
+		byte b[] = new byte[8];
+		long s = 414747L;
+		LittleEndianOutputStream leos = LittleEndianOutputStream.wrap(b);
+		leos.writeUnsignedInt(s);
+		assertEquals(s, LittleEndianInputStream.wrap(b).readUnsignedInt());
+	}
 
 	public static void reverse(byte[] b) {
 		int left  = 0;          // index of leftmost element

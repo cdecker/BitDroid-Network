@@ -20,12 +20,30 @@ public class VersionMessage extends Message {
 		this.timestamp = timestamp;
 	}
 
-	private long protocolVersion;
-	private byte[] localServices = new byte[8];
+	private long protocolVersion = 31700;
+	
+	// Default services for this client 
+	private byte[] localServices = new byte[]{1,0,0,0,0,0,0,0};
 	private PeerAddress myAddress, yourAddress;
 	private long nonce;
+	private String clientVersion;
+	private long height;
 	
 	
+	/**
+	 * @return the height
+	 */
+	final long getHeight() {
+		return height;
+	}
+
+	/**
+	 * @param height the height to set
+	 */
+	final void setHeight(long height) {
+		this.height = height;
+	}
+
 	long getNonce() {
 		return nonce;
 	}
@@ -66,10 +84,20 @@ public class VersionMessage extends Message {
 		in.read(b);
 		setYourAddress(new PeerAddress(LittleEndianInputStream.wrap(b)));
 		setNonce(in.readLong());
+		clientSocket.setNonce(getNonce());
+		setClientVersion(in.readString());
+		setHeight(in.readUnsignedInt());
 	}
 
-	public void toWire(LittleEndianOutputStream leos){
-		throw new RuntimeException("Not yet implemented");
+	public void toWire(LittleEndianOutputStream leos) throws IOException{
+		leos.writeUnsignedInt(this.protocolVersion);
+		leos.write(localServices);
+		leos.writeLong(timestamp);
+		myAddress.toWire(leos);
+		yourAddress.toWire(leos);
+		leos.writeLong(getNonce());
+		leos.writeString(getClientVersion());
+		leos.writeUnsignedInt(getHeight());
 	}
 
 	/**
@@ -84,5 +112,24 @@ public class VersionMessage extends Message {
 	 */
 	public PeerAddress getMyAddress() {
 		return myAddress;
+	}
+
+	/**
+	 * @param clientVersion the clientVersion to set
+	 */
+	public void setClientVersion(String clientVersion) {
+		this.clientVersion = clientVersion;
+	}
+
+	/**
+	 * @return the clientVersion
+	 */
+	public String getClientVersion() {
+		return clientVersion;
+	}
+
+	@Override
+	public String getCommand() {
+		return "version";
 	}
 }

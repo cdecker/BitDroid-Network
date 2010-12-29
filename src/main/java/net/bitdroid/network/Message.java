@@ -6,6 +6,10 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public abstract class Message {
+	/**
+	 * @return the command
+	 */
+	public abstract String getCommand();
 	private int size;
 	protected BitcoinClientSocket clientSocket;
 	

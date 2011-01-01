@@ -46,4 +46,12 @@ public class VerackMessage extends Message {
 	public String getCommand() {
 		return "verack";
 	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "VerackMessage[]";
+	}
 }

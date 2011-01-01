@@ -86,16 +86,16 @@ public class BitcoinClientSocket implements Runnable {
 		int size = (int)((buf[3] & 0xFF) << 24 | (buf[2] & 0xFF) << 16 | 
 				(buf[1] & 0xFF) << 8 | (buf[0] & 0xFF));
 
-		// Now read the buffer and wrap it into a LittleEndianInputStream
-		final byte b[] = new byte[size];
-		inputStream.read(b);
-		LittleEndianInputStream leis = LittleEndianInputStream.wrap(b);
-		
 		if(currentState != ClientState.HANDSHAKE){
 			byte[] checksum = new byte[4];
 			inputStream.read(checksum);
 			// TODO add switch to check the checksum.
 		}
+		
+		// Now read the buffer and wrap it into a LittleEndianInputStream
+		final byte b[] = new byte[size];
+		inputStream.read(b);
+		LittleEndianInputStream leis = LittleEndianInputStream.wrap(b);
 
 		// Boilerplate to select the right message to initialize.
 		Message message;
@@ -103,6 +103,10 @@ public class BitcoinClientSocket implements Runnable {
 			message = new VersionMessage(this);
 		else if("verack".equalsIgnoreCase(command))
 			message = new VerackMessage(this);
+		else if("inv".equalsIgnoreCase(command))
+			message = new InventoryMessage(this);
+		else if("addr".equalsIgnoreCase(command))
+			message = new AddrMessage(this);
 		else{
 			message = new UnknownMessage(this);
 			((UnknownMessage)message).setCommand(command);
@@ -116,7 +120,7 @@ public class BitcoinClientSocket implements Runnable {
 	}
 
 	public void run() {
-		addListener(new BitcoinClientDriver(this));
+		addListener(new BitcoinClientDriver());
 		try{
 			while(currentState != ClientState.SHUTDOWN && isConnected()){
 				// Read the message

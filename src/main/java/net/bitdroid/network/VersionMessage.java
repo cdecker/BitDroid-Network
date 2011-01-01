@@ -70,7 +70,7 @@ public class VersionMessage extends Message {
 		this.nonce = nonce;
 	}
 
-	PeerAddress getYourAddress() {
+	public PeerAddress getYourAddress() {
 		return yourAddress;
 	}
 
@@ -149,5 +149,15 @@ public class VersionMessage extends Message {
 	@Override
 	public String getCommand() {
 		return "version";
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("VersionMessage[proto=");
+		sb.append(protocolVersion).append("]");
+		return sb.toString();
 	}
 }

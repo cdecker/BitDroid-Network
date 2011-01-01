@@ -21,6 +21,7 @@ package net.bitdroid.network;
 import java.io.IOException;
 
 
+
 /**
  * Default driver that automatically responds to certain messages to keep the
  * connection alive.
@@ -30,10 +31,7 @@ import java.io.IOException;
  */
 public class BitcoinClientDriver implements BitcoinEventListener {
 
-	private BitcoinClientSocket socket;
-	
-	public BitcoinClientDriver(BitcoinClientSocket socket){
-		this.socket = socket;
+	public BitcoinClientDriver(){
 	}
 	
 	public void eventReceived(Message message) {
@@ -41,16 +39,16 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 			// If we got the message out here in userland the protocol version is supported
 			// Create a verack and send it back
 			VersionMessage hisVersion = (VersionMessage)message;
-			VerackMessage verack = new VerackMessage(socket);
-			VersionMessage version = new VersionMessage(socket);
+			VerackMessage verack = new VerackMessage(message.getClientSocket());
+			VersionMessage version = new VersionMessage(message.getClientSocket());
 			version.setClientVersion("BitDroid 0.1");
 			version.setProtocolVersion(31700);
 			version.setMyAddress(hisVersion.getYourAddress());
 			version.setYourAddress(hisVersion.getMyAddress());
 			version.setTimestamp(System.currentTimeMillis());
 			try {
-				socket.sendMessage(version);
-				socket.sendMessage(verack);
+				message.getClientSocket().sendMessage(version);
+				message.getClientSocket().sendMessage(verack);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

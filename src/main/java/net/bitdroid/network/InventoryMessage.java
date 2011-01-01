@@ -26,18 +26,7 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public class InventoryMessage extends Message {
-	enum InventoryType {
-		ERROR(0), MSG_TX(1), MSG_BLOCK(2);
-		private int code;
-
-		private InventoryType(int c) {
-			code = c;
-		}
-
-		public int getCode() {
-			return code;
-		}
-	};
+	public static final int ERROR = 0, MSG_TX = 1, MSG_BLOCK = 2;
 	
 	private List<InventoryItem> items = new LinkedList<InventoryMessage.InventoryItem>();
 
@@ -48,17 +37,19 @@ public class InventoryMessage extends Message {
 
 	@Override
 	void read(LittleEndianInputStream in) throws IOException {
-		int count = in.readInt();
+		long count = in.readVariableSize();
 		for(int i=0; i<count; i++){
 			byte[] buffer = new byte[32];
+			int t = in.readInt();
 			in.read(buffer);
-			//items.add(new InventoryItem(in.read(), buffer));
+			items.add(new InventoryItem(t, buffer));
 		}
 	}
 
 	@Override
 	void toWire(LittleEndianOutputStream leos) throws IOException {
 	}
+	
 	public class InventoryItem {
 		private byte[] hash;
 		/**
@@ -70,11 +61,11 @@ public class InventoryMessage extends Message {
 		/**
 		 * @return the type
 		 */
-		public final InventoryType getType() {
+		public final int getType() {
 			return type;
 		}
-		private InventoryType type;
-		public InventoryItem(InventoryType type, byte hash[]){
+		private int type;
+		public InventoryItem(int type, byte hash[]){
 			this.hash = hash;
 			this.type = type;
 		}
@@ -96,5 +87,19 @@ public class InventoryMessage extends Message {
 	 */
 	public List<InventoryItem> getItems() {
 		return items;
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("InventoryMessage[count=");
+		
+		sb.append(items.size()).append(",");
+		for(InventoryItem i : items)
+			sb.append(i.toString()).append(" ");
+		sb.append("]");
+		return super.toString();
 	}
 }

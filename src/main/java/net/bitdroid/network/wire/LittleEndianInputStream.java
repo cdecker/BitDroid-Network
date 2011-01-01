@@ -366,10 +366,19 @@ public class LittleEndianInputStream extends FilterInputStream {
 				}
 				return bb.get();
 			}
+			
 			public synchronized int read(byte[] bytes, int off, int len) throws IOException {
 				// Read only what's left
 				len = Math.min(len, bb.remaining());
 				bb.get(bytes, off, len); return len;
+			}
+			
+			/* (non-Javadoc)
+			 * @see java.io.InputStream#available()
+			 */
+			@Override
+			public int available() throws IOException {
+				return bb.remaining();
 			}
 		});
 		return leis;

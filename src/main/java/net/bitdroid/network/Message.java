@@ -31,6 +31,13 @@ public abstract class Message {
 	private int size;
 	protected BitcoinClientSocket clientSocket;
 	
+	/**
+	 * @return the clientSocket
+	 */
+	public BitcoinClientSocket getClientSocket() {
+		return clientSocket;
+	}
+
 	Message(LittleEndianInputStream in) throws IOException{
 		this.read(in);
 	}

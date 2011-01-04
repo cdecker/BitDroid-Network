@@ -19,11 +19,13 @@
 package net.bitdroid.network;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
 
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
+import net.bitdroid.utils.StringUtils;
 
 public class InventoryMessage extends Message {
 	public static final int ERROR = 0, MSG_TX = 1, MSG_BLOCK = 2;
@@ -42,6 +44,8 @@ public class InventoryMessage extends Message {
 			byte[] buffer = new byte[32];
 			int t = in.readInt();
 			in.read(buffer);
+			// We like hashes with leading 0s, and it's the format used by the BBE.
+			StringUtils.reverse(buffer);
 			items.add(new InventoryItem(t, buffer));
 		}
 	}
@@ -69,6 +73,33 @@ public class InventoryMessage extends Message {
 			this.hash = hash;
 			this.type = type;
 		}
+		
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder("InventoryItem[type=");
+			switch (type) {
+			case 0:
+				sb.append("ERROR");
+				break;
+			case 1:
+				sb.append("MSG_TX");
+				break;
+			case 2:
+				sb.append("MSG_BLOCK");
+				break;
+			default:
+				break;
+			}
+			
+			try {
+				sb.append(",hash=").append(StringUtils.getHexString(hash));
+			} catch (UnsupportedEncodingException e) {}
+			sb.append("]");
+			return sb.toString();
+		}
 	}
 	@Override
 	public String getCommand() {
@@ -95,11 +126,10 @@ public class InventoryMessage extends Message {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("InventoryMessage[count=");
-		
 		sb.append(items.size()).append(",");
 		for(InventoryItem i : items)
 			sb.append(i.toString()).append(" ");
 		sb.append("]");
-		return super.toString();
+		return sb.toString();
 	}
 }

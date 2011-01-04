@@ -33,7 +33,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 
 	public BitcoinClientDriver(){
 	}
-	
+
 	public void eventReceived(Message message) {
 		if(message instanceof VersionMessage){
 			// If we got the message out here in userland the protocol version is supported
@@ -53,6 +53,14 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}else if(message instanceof AddrMessage){
+			try {
+				// Answer with a ping, just piggybacking it here
+				message.getClientSocket().sendMessage(new PingMessage(message.getClientSocket()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 		}
 	}
 

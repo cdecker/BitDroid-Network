@@ -46,7 +46,7 @@ public class AddrMessage extends Message {
 	}
 
 	private List<PeerAddress> addresses = new LinkedList<PeerAddress>();
-	
+
 	/**
 	 * @return the addresses
 	 */
@@ -59,14 +59,13 @@ public class AddrMessage extends Message {
 	 */
 	@Override
 	void read(LittleEndianInputStream in) throws IOException {
-		// TODO Use in.available() to check if we have more items
-		try{
-			while(true){
-				PeerAddress peer = new PeerAddress(getClientSocket());
-				peer.read(in);
-				addresses.add(peer);
-			}
-		}catch(IOException ioe){}
+		// TODO find out what these 5 bytes are used for!
+		in.skip(5);
+		while(in.available() > 25){
+			PeerAddress peer = new PeerAddress(getClientSocket());
+			peer.read(in);
+			addresses.add(peer);
+		}
 	}
 
 	/* (non-Javadoc)
@@ -77,6 +76,7 @@ public class AddrMessage extends Message {
 		// TODO Auto-generated method stub
 		throw new RuntimeException("Not yet implemented");
 	}
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

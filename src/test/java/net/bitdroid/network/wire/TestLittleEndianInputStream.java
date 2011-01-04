@@ -18,13 +18,13 @@
 
 package net.bitdroid.network.wire;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import net.bitdroid.network.wire.LittleEndianInputStream;
+import net.bitdroid.utils.StringUtils;
 
 import org.junit.After;
 import org.junit.Before;
@@ -80,7 +80,7 @@ public class TestLittleEndianInputStream {
 	public void testReadUnsignedLong() throws IOException {
 		BigInteger c = new BigInteger("1311768467463790320");
 		byte b[] = c.toByteArray();
-		reverse(b);
+		StringUtils.reverse(b);
 		BigInteger r = LittleEndianInputStream.wrap(b).readUnsignedLong(); 
 		assertEquals(c, r);
 	}
@@ -117,11 +117,11 @@ public class TestLittleEndianInputStream {
 	public void testReadShort() throws IOException {
 		short value = 12345; // Just a random number
 		byte b[] = new byte[]{(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-		reverse(b);
+		StringUtils.reverse(b);
 		assertEquals(value, LittleEndianInputStream.wrap(b).readShort());
 		value = -12345;
 		b = new byte[]{(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-		reverse(b);
+		StringUtils.reverse(b);
 		assertEquals(value, LittleEndianInputStream.wrap(b).readShort());
 	}
 
@@ -142,11 +142,11 @@ public class TestLittleEndianInputStream {
 		public void testReadInt() throws IOException {
 			int value = 12345000; // Just a random number
 			byte b[] = new byte[]{(byte)((value >> 24) & 0xFF),(byte)((value >> 16) & 0xFF),(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-			reverse(b);
+			StringUtils.reverse(b);
 			assertEquals(value, LittleEndianInputStream.wrap(b).readInt());
 			value = -12345000;
 			b = new byte[]{(byte)((value >> 24) & 0xFF),(byte)((value >> 16) & 0xFF),(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-			reverse(b);
+			StringUtils.reverse(b);
 			assertEquals(value, LittleEndianInputStream.wrap(b).readInt());
 		}
 
@@ -161,14 +161,14 @@ public class TestLittleEndianInputStream {
 				(byte)((value >> 40) & 0xFF),(byte)((value >> 32) & 0xFF),
 				(byte)((value >> 24) & 0xFF),(byte)((value >> 16) & 0xFF),
 				(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-		reverse(b);
+		StringUtils.reverse(b);
 		assertEquals(value, LittleEndianInputStream.wrap(b).readLong());
 		value = -1311768467463790320L;
 		b = new byte[]{(byte)((value >> 56) & 0xFF),(byte)((value >> 48) & 0xFF),
 				(byte)((value >> 40) & 0xFF),(byte)((value >> 32) & 0xFF),
 				(byte)((value >> 24) & 0xFF),(byte)((value >> 16) & 0xFF),
 				(byte)((value >> 8) & 0xFF),(byte)(value & 0xFF)};
-		reverse(b);
+		StringUtils.reverse(b);
 		assertEquals(value, LittleEndianInputStream.wrap(b).readLong());
 	}
 
@@ -221,21 +221,4 @@ public class TestLittleEndianInputStream {
 		LittleEndianInputStream.wrap(b).read(o);
 		assert(Arrays.equals(b, o));
 	}
-
-	public static void reverse(byte[] b) {
-		int left  = 0;          // index of leftmost element
-		int right = b.length-1; // index of rightmost element
-
-		while (left < right) {
-			// exchange the left and right elements
-			byte temp = b[left]; 
-			b[left]  = b[right]; 
-			b[right] = temp;
-
-			// move the bounds toward the center
-			left++;
-			right--;
-		}
-	}//endmethod reverse
-
 }

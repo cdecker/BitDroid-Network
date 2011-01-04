@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -157,6 +159,25 @@ public class BitcoinClientSocket implements Runnable {
 		int size = outBuffer.toByteArray().length;
 		outputStream.write(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
 				(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)});
+		if(currentState == ClientState.OPEN)
+			outputStream.write(calculateChecksum(outBuffer.toByteArray()));
+		
 		outputStream.write(outBuffer.toByteArray());
+	}
+	
+	byte[] calculateChecksum(byte[] b){
+		byte[] res = new byte[4];
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			md.reset();
+			byte[] o = md.digest(b);
+			md.reset();
+			o = md.digest(o);
+			for(int i=0; i<4; i++)
+				res[i] = o[i];
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return res;
 	}
 }

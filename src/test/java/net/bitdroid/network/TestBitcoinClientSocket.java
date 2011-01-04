@@ -121,10 +121,27 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertTrue(Arrays.equals(c, b));
 	}
 	
+	@Test
 	public void testReadInvMessage() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
 		s.currentState = ClientState.OPEN;
 		InventoryMessage m = (InventoryMessage)s.readMessage();
 		assertEquals(8, m.getItems().size());
+	}
+	
+	@Test
+	public void testChecksum() throws IOException{
+		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
+		InputStream in = ClassLoader.getSystemResourceAsStream("bitcoin-inv-2.dump");
+		in.skip(20);
+		byte[] checksum = new byte[4];
+		in.read(checksum);
+		byte[] content = new byte[289];
+		in.read(content);
+		byte[] calc = s.calculateChecksum(content);
+
+		assertEquals(checksum.length, calc.length);
+		for(int i=0; i<calc.length; i++)
+			assertEquals(checksum[i], calc[i]);
 	}
 }

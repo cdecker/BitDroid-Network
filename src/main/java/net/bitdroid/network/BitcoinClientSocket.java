@@ -35,14 +35,15 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
 public class BitcoinClientSocket implements Runnable {
 
 	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
-	static final int magicInt = -642466055;
+	static final byte[] testnetMagic = new byte[]{(byte)0xFA,(byte)0xBF,(byte)0xB5,(byte)0xDA};
+	private boolean testnet = false;
 	protected InputStream inputStream;
 	protected OutputStream outputStream;
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
 	protected long nonce;
 	protected Socket socket;
 	
-	enum ClientState {
+	public enum ClientState {
 	    HANDSHAKE, OPEN, SHUTDOWN
 	};
 	protected ClientState currentState = ClientState.HANDSHAKE;
@@ -51,21 +52,27 @@ public class BitcoinClientSocket implements Runnable {
 		return nonce;
 	}
 
-	void setNonce(long nonce) {
+	public void setNonce(long nonce) {
 		this.nonce = nonce;
 	}
 
 	/**
-	 * Constructor wrapping the actual socket.
+	 * C'tor only for unit tests.
 	 */
-	BitcoinClientSocket(){
-
+	BitcoinClientSocket() {
 	}
 	
 	public BitcoinClientSocket(Socket socket) throws IOException{
 		inputStream = socket.getInputStream();
 		outputStream = socket.getOutputStream();
 		this.socket = socket;
+	}
+
+	public BitcoinClientSocket(Socket socket, boolean testnet) throws IOException{
+		inputStream = socket.getInputStream();
+		outputStream = socket.getOutputStream();
+		this.socket = socket;
+		this.testnet = testnet;
 	}
 
 	public void addListener(BitcoinEventListener listener){
@@ -95,6 +102,8 @@ public class BitcoinClientSocket implements Runnable {
 		}
 		
 		// Now read the buffer and wrap it into a LittleEndianInputStream
+		// This is mainly done to isolate the messages from each other and
+		// keep the data stream in sync.
 		final byte b[] = new byte[size];
 		inputStream.read(b);
 		LittleEndianInputStream leis = LittleEndianInputStream.wrap(b);
@@ -103,18 +112,22 @@ public class BitcoinClientSocket implements Runnable {
 		Message message;
 		if("version".equalsIgnoreCase(command))
 			message = new VersionMessage(this);
-		else if("verack".equalsIgnoreCase(command))
+		else if("verack".equalsIgnoreCase(command)){
 			message = new VerackMessage(this);
-		else if("inv".equalsIgnoreCase(command))
+			// Just set the socket to require checksum flag
+			currentState = ClientState.OPEN;
+		}else if("inv".equalsIgnoreCase(command))
 			message = new InventoryMessage(this);
 		else if("addr".equalsIgnoreCase(command))
 			message = new AddrMessage(this);
+		else if("tx".equalsIgnoreCase(command))
+			message = new Transaction(this);
 		else{
 			message = new UnknownMessage(this);
 			((UnknownMessage)message).setCommand(command);
 		}
 
-		message.setSize(size);
+		message.setPayloadSize(size);
 		// And now each message knows how to read its format:
 		message.read(leis);
 		return message;
@@ -179,5 +192,17 @@ public class BitcoinClientSocket implements Runnable {
 			e.printStackTrace();
 		}
 		return res;
+	}
+	
+	public void close(){
+		try {
+			socket.close();
+			inputStream.close();
+			outputStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			currentState = ClientState.SHUTDOWN;
+		}
 	}
 }

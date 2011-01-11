@@ -28,7 +28,7 @@ public abstract class Message {
 	 * @return the command
 	 */
 	abstract String getCommand();
-	private int size;
+	private int payloadSize;
 	protected BitcoinClientSocket clientSocket;
 	
 	/**
@@ -46,11 +46,11 @@ public abstract class Message {
 		this.clientSocket = clientSocket;
 	}
 	
-	public int getSize() {
-		return size;
+	int getPayloadSize() {
+		return payloadSize;
 	}
-	void setSize(int size) {
-		this.size = size;
+	void setPayloadSize(int size) {
+		this.payloadSize = size;
 	}
 	abstract void read(LittleEndianInputStream in) throws IOException;
 	abstract void toWire(LittleEndianOutputStream leos) throws IOException;

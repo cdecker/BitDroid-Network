@@ -59,9 +59,11 @@ public class AddrMessage extends Message {
 	 */
 	@Override
 	void read(LittleEndianInputStream in) throws IOException {
-		// TODO find out what these 5 bytes are used for!
-		in.skip(5);
-		while(in.available() > 25){
+		// TODO avoid this hack by reading the prefix exactly
+		// Read the variable length:
+		long count = in.readVariableSize();
+		for(long i=0; i<count; i++){
+			int timestamp = in.readInt(); 
 			PeerAddress peer = new PeerAddress(getClientSocket());
 			peer.read(in);
 			addresses.add(peer);
@@ -72,7 +74,7 @@ public class AddrMessage extends Message {
 	 * @see net.bitdroid.network.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		// TODO Auto-generated method stub
 		throw new RuntimeException("Not yet implemented");
 	}

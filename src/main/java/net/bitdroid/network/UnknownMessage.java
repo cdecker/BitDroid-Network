@@ -51,7 +51,7 @@ public class UnknownMessage extends Message {
 	 */
 	@Override
 	void read(LittleEndianInputStream in) throws IOException {
-		content = new byte[getSize()];
+		content = new byte[getPayloadSize()];
 		in.read(content);
 	}
 

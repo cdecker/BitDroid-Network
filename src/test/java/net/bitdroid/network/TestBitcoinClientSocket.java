@@ -18,6 +18,7 @@
 
 package net.bitdroid.network;
 
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -26,14 +27,17 @@ import java.util.Arrays;
 import junit.framework.TestCase;
 
 import net.bitdroid.network.BitcoinClientSocket.ClientState;
+import net.bitdroid.network.Transaction.TxInput;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
+import net.bitdroid.utils.StringUtils;
 
+import org.databene.contiperf.Required;
 import org.junit.Test;
 
 public class TestBitcoinClientSocket extends TestCase {
 
-	protected BitcoinClientSocket prepareWithDump(String filename){
+	protected BitcoinClientSocket prepareWithDump(String filename) throws IOException{
 		BitcoinClientSocket s = new BitcoinClientSocket();
 		s.inputStream = ClassLoader.getSystemResourceAsStream(filename);
 		return s;
@@ -57,7 +61,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		// There's not much to test, it's an empty message.
 		Message m = s.readMessage();
 		assert(m instanceof VerackMessage);
-		assertEquals(m.getSize(), 0);
+		assertEquals(m.getPayloadSize(), 0);
 		assertTrue("Checksum is set on the socket", s.currentState == ClientState.OPEN);
 	}
 	
@@ -66,7 +70,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
 		VersionMessage m = (VersionMessage)s.readMessage();
 		assert(m instanceof VersionMessage);
-		assertEquals(m.getSize(), 85);
+		assertEquals(m.getPayloadSize(), 85);
 		assertEquals(31700, m.getProtocolVersion());
 		assertEquals(1292970988, m.getTimestamp());
 		assertEquals("Checksum is set not yet enabled on the socket", ClientState.HANDSHAKE, s.currentState);
@@ -130,6 +134,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	}
 	
 	@Test
+	@Required(max = 1200, average = 250)
 	public void testChecksum() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
 		InputStream in = ClassLoader.getSystemResourceAsStream("bitcoin-inv-2.dump");
@@ -143,5 +148,20 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(checksum.length, calc.length);
 		for(int i=0; i<calc.length; i++)
 			assertEquals(checksum[i], calc[i]);
+	}
+	
+	@Test
+	public void testReadTxMessage() throws IOException{
+		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
+		s.currentState = ClientState.OPEN;
+		Transaction m = (Transaction)s.readMessage();
+		assertEquals(1,m.getInputs().size());
+		TxInput txIn = m.getInputs().get(0);
+		byte[] b = txIn.getPrevious().getHash().clone();
+		StringUtils.reverse(b);
+		assertEquals("2936ee6a0db4e4901988503bb6e966128dd5fa01bcf08451f78a1d5b08dbbd6d", StringUtils.getHexString(b));
+		System.out.println(StringUtils.getHexString(b));
+		assertEquals(2, m.getOutputs().size());
+
 	}
 }

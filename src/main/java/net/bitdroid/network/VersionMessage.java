@@ -74,7 +74,7 @@ public class VersionMessage extends Message {
 		return yourAddress;
 	}
 
-	void setYourAddress(PeerAddress yourAddress) {
+	public void setYourAddress(PeerAddress yourAddress) {
 		this.yourAddress = yourAddress;
 	}
 

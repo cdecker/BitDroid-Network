@@ -20,11 +20,12 @@ package net.bitdroid.network;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Arrays;
 
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
-public class PeerAddress extends Message {
+public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	private long services;
 	private byte reserved[];
 	byte[] getReserved() {
@@ -126,5 +127,10 @@ public class PeerAddress extends Message {
 		sb.append(":").append(port).append("[Services=").append(services).append("]");
 		return sb.toString();
 	}
-
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(PeerAddress o) {
+		return address.equals(o.getAddress()) && port == o.getPort()?0:-1;
+	}
 }

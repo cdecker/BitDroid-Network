@@ -59,11 +59,11 @@ public class LittleEndianInputStream extends FilterInputStream {
 
 	public long readVariableSize() throws IOException{
 		int b = readUnsignedByte();
-		if(b == 255){
+		if(b == 255){ // 255 in two's complement
 			throw new RuntimeException("I was never expecting a length of UInt64, please slap the developer.");
-		}else if(b == 254){
+		}else if(b == 254){ // 254 in two's complement
 			return readUnsignedInt();
-		}else if(b == 253)
+		}else if(b == 253) // 253 in two's complement
 			return readUnsignedShort();
 		else
 			return b;
@@ -135,10 +135,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
 	public int readUnsignedByte() throws IOException {
-
-		int temp = in.read();
-		return temp;
-
+		return in.read() & 0xFF;
 	}
 
 	/**

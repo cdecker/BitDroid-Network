@@ -22,6 +22,7 @@ import java.io.IOException;
 
 
 
+
 /**
  * Default driver that automatically responds to certain messages to keep the
  * connection alive.
@@ -58,7 +59,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				// Answer with a ping, just piggybacking it here
 				message.getClientSocket().sendMessage(new PingMessage(message.getClientSocket()));
 			} catch (IOException e) {
-				e.printStackTrace();
+				
 			}
 
 		}

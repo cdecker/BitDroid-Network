@@ -150,6 +150,9 @@ public class TestBitcoinClientSocket extends TestCase {
 			assertEquals(checksum[i], calc[i]);
 	}
 	
+	/*
+	 * Tests against transaction http://blockexplorer.com/t/94QA14eKWN
+         */
 	@Test
 	public void testReadTxMessage() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
@@ -160,7 +163,6 @@ public class TestBitcoinClientSocket extends TestCase {
 		byte[] b = txIn.getPrevious().getHash().clone();
 		StringUtils.reverse(b);
 		assertEquals("2936ee6a0db4e4901988503bb6e966128dd5fa01bcf08451f78a1d5b08dbbd6d", StringUtils.getHexString(b));
-		System.out.println(StringUtils.getHexString(b));
 		assertEquals(2, m.getOutputs().size());
 
 	}

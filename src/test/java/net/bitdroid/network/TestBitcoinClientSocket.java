@@ -32,11 +32,14 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
 
-import org.databene.contiperf.Required;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestBitcoinClientSocket extends TestCase {
 
+	Logger LOG = LoggerFactory.getLogger(TestBitcoinClientSocket.class);
+	
 	protected BitcoinClientSocket prepareWithDump(String filename) throws IOException{
 		BitcoinClientSocket s = new BitcoinClientSocket();
 		s.inputStream = ClassLoader.getSystemResourceAsStream(filename);
@@ -116,12 +119,8 @@ public class TestBitcoinClientSocket extends TestCase {
 		a.toWire(leos);
 		byte c[] = new byte[26];
 		ClassLoader.getSystemResourceAsStream("address.dump").read(c);
-		for(byte bt : b)
-			System.out.print((int)bt);
-		System.out.println();
-		for(byte ct : c)
-			System.out.print((int)ct);
-		System.out.println();
+		LOG.info(StringUtils.getHexString(b));
+		LOG.info(StringUtils.getHexString(c));
 		assertTrue(Arrays.equals(c, b));
 	}
 	
@@ -134,7 +133,6 @@ public class TestBitcoinClientSocket extends TestCase {
 	}
 	
 	@Test
-	@Required(max = 1200, average = 250)
 	public void testChecksum() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
 		InputStream in = ClassLoader.getSystemResourceAsStream("bitcoin-inv-2.dump");
@@ -152,7 +150,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	/*
 	 * Tests against transaction http://blockexplorer.com/t/94QA14eKWN
-         */
+     */
 	@Test
 	public void testReadTxMessage() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");

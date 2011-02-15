@@ -162,6 +162,22 @@ public class TestBitcoinClientSocket extends TestCase {
 		StringUtils.reverse(b);
 		assertEquals("2936ee6a0db4e4901988503bb6e966128dd5fa01bcf08451f78a1d5b08dbbd6d", StringUtils.getHexString(b));
 		assertEquals(2, m.getOutputs().size());
+	}
+	
+	@Test
+	public void testReadBlockMessage() throws IOException{
+		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
+		s.currentState = ClientState.OPEN;
+		BlockMessage m = (BlockMessage)s.readMessage();
+		assertEquals(1, m.getVersion());
+		System.out.println(StringUtils.getHexString(m.getPreviousHash()));
+		System.out.println(StringUtils.getHexString(m.getMerkleRoot()));
+		System.out.println(StringUtils.getHexString(m.getNonce()));
 
+		// The dump is of block 96180, previous hash points to 96179, 
+		assertEquals("0000000000018998eb165333c20db25a170c2e3a468ea05a3ad672c8b678fdc2",StringUtils.getHexString(m.getPreviousHash()));
+		assertEquals("ae7741a7e6cd43917e49f081dbe222106f30042687b9cc0de2d24af0950f43da",StringUtils.getHexString(m.getMerkleRoot()));
+		// Nonce is in hexadecimal (1652850737 = 0x62848031)
+		assertEquals("62848031", StringUtils.getHexString(m.getNonce()));
 	}
 }

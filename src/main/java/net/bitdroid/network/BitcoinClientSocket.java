@@ -122,6 +122,8 @@ public class BitcoinClientSocket implements Runnable {
 			message = new AddrMessage(this);
 		else if("tx".equalsIgnoreCase(command))
 			message = new Transaction(this);
+		else if("block".equalsIgnoreCase(command))
+			message = new BlockMessage(this);
 		else{
 			message = new UnknownMessage(this);
 			((UnknownMessage)message).setCommand(command);

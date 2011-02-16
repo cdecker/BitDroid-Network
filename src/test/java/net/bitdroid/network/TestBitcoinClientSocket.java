@@ -180,4 +180,30 @@ public class TestBitcoinClientSocket extends TestCase {
 		// Nonce is in hexadecimal (1652850737 = 0x62848031)
 		assertEquals("62848031", StringUtils.getHexString(m.getNonce()));
 	}
+	
+	@Test
+	public void testReadWriteBlockMessage() throws IOException {
+		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
+		s.currentState = ClientState.OPEN;
+		BlockMessage m = (BlockMessage)s.readMessage();
+		byte[] buf = readDump("bitcoin-block-3.dump", 7266);
+		byte[] output = new byte[7266];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(m);
+		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
+	}
+
+	@Test
+	public void testReadWriteTransaction() throws IOException {
+		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
+		s.currentState = ClientState.OPEN;
+		Transaction m = (Transaction)s.readMessage();
+		byte[] buf = readDump("bitcoin-tx-14.dump", 282);
+		byte[] output = new byte[282];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(m);
+		System.out.println(StringUtils.getHexString(buf));
+		System.out.println(StringUtils.getHexString(output));
+		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
+	}
 }

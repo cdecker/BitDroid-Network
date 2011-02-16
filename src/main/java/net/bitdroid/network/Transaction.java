@@ -22,6 +22,8 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.slf4j.LoggerFactory;
+
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
@@ -67,8 +69,10 @@ public class Transaction extends Message {
 			o.setIndex(in.readInt());
 			TxInput txIn = new TxInput();
 			txIn.setPrevious(o);
-//			in.read();
-			txIn.setSignature(in.readString());
+			long sigLength = in.readVariableSize();
+			byte sig[] = new byte[(int) sigLength];
+			in.read(sig);
+			txIn.setSignature(sig);
 			txIn.setSequence(in.readUnsignedInt());
 			inputs.add(txIn);
 		}
@@ -77,7 +81,10 @@ public class Transaction extends Message {
 		for(int i=0; i<outputCount; i++){
 			TxOutput txOut = new TxOutput();
 			txOut.setValue(in.readUnsignedLong());
-			txOut.setScript(in.readString());
+			long scriptLength = in.readVariableSize();
+			byte script[] = new byte[(int)scriptLength];
+			in.read(script);
+			txOut.setScript(script);
 			outputs.add(txOut);
 		}
 		locktime = in.readInt();
@@ -88,11 +95,30 @@ public class Transaction extends Message {
 	 */
 	@Override
 	void toWire(LittleEndianOutputStream leos) throws IOException {
-		throw new RuntimeException("Not yet implemented!");
+		leos.writeInt(version);
+		
+		// Write inputs
+		leos.writeVariableSize(inputs.size());
+		for(TxInput txIn : inputs){
+			leos.write(txIn.getPrevious().getHash());
+			leos.writeInt(txIn.getPrevious().getIndex());
+			leos.writeVariableSize(txIn.getSignature().length);
+			leos.write(txIn.getSignature());
+			leos.writeUnsignedInt(txIn.getSequence());
+		}
+		
+		leos.writeVariableSize(outputs.size());
+		for(TxOutput o : outputs){
+			leos.writeUnsignedLong(o.getValue());
+			leos.writeVariableSize(o.getScript().length);
+			leos.write(o.getScript());
+		}
+		leos.writeInt(locktime);
 	}
+
 	public class TxOutput {
 		private BigInteger value;
-		private String script;
+		private byte[] script;
 		/**
 		 * @return the value
 		 */
@@ -108,20 +134,20 @@ public class Transaction extends Message {
 		/**
 		 * @return the script
 		 */
-		public String getScript() {
+		public byte[] getScript() {
 			return script;
 		}
 		/**
-		 * @param script the script to set
+		 * @param script2 the script to set
 		 */
-		public void setScript(String script) {
-			this.script = script;
+		public void setScript(byte[] script2) {
+			this.script = script2;
 		}
 	}
 	
 	public class TxInput {
 		private TxOutputPoint previous;
-		private String signature;
+		private byte[] signature;
 		private long sequence;
 		/**
 		 * @return the previous
@@ -138,14 +164,14 @@ public class Transaction extends Message {
 		/**
 		 * @return the signature
 		 */
-		public String getSignature() {
+		public byte[] getSignature() {
 			return signature;
 		}
 		/**
-		 * @param signature the signature to set
+		 * @param sig the signature to set
 		 */
-		public void setSignature(String signature) {
-			this.signature = signature;
+		public void setSignature(byte[] sig) {
+			this.signature = sig;
 		}
 		/**
 		 * @return the sequence

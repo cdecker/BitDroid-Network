@@ -59,11 +59,11 @@ public class LittleEndianInputStream extends FilterInputStream {
 
 	public long readVariableSize() throws IOException{
 		int b = readUnsignedByte();
-		if(b == 255){ // 255 in two's complement
+		if(b == 255){
 			throw new RuntimeException("I was never expecting a length of UInt64, please slap the developer.");
-		}else if(b == 254){ // 254 in two's complement
+		}else if(b == 254){
 			return readUnsignedInt();
-		}else if(b == 253) // 253 in two's complement
+		}else if(b == 253)
 			return readUnsignedShort();
 		else
 			return b;
@@ -80,7 +80,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * Reverse a byte array.
 	 * @param b
 	 */
-	private static void reverse(byte[] b) {
+	private final static void reverse(byte[] b) {
 		int left  = 0, right = b.length-1;
 		while (left < right) {
 			byte temp = b[left]; 
@@ -119,7 +119,6 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
 	public byte readByte(int b) throws IOException {
-
 		int temp = in.read();
 		return (byte) temp;
 
@@ -317,9 +316,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException   if an I/O error occurs.
 	 */
 	public final double readDouble() throws IOException {
-
 		return Double.longBitsToDouble(this.readLong());
-
 	}
 
 	/**
@@ -331,9 +328,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException  if an I/O error occurs.
 	 */
 	public final float readFloat() throws IOException {
-
 		return Float.intBitsToFloat(this.readInt());
-
 	}
 
 	/**
@@ -348,10 +343,8 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
 	public final int skipBytes(int n) throws IOException {
-
 		for (int i = 0; i < n; i += (int) skip(n - i));
 		return n;
-
 	}
 
 	public static LittleEndianInputStream wrap(final byte[] b){

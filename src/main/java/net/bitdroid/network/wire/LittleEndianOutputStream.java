@@ -22,7 +22,11 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import javax.sound.sampled.ReverbType;
 
 /**
  * A little endian output stream writes primitive Java numbers 
@@ -82,6 +86,14 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 		b[1] = (byte)(s >> 8 & 0xFF);
 		b[0] = (byte)(s & 0xFF);
 		write(b);
+	}
+	
+	public void writeUnsignedLong(BigInteger i) throws IOException{
+		// Dirty little trick, let's just hope the last bit is never set...
+		writeLong(i.longValue());
+		//byte[] b = i.toByteArray(), 8);
+		//reverse(b);
+		//write(b);
 	}
 	
 	public void writeUnsignedInt(long v) throws IOException {
@@ -225,63 +237,54 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	 *             65,535 characters.
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
-	public void writeUTF(String s) throws IOException {
+//	public void writeUTF(String s) throws IOException {
+//
+//		int numchars = s.length();
+//		int numbytes = 0;
+//
+//		for (int i = 0 ; i < numchars ; i++) {
+//			int c = s.charAt(i);
+//			if ((c >= 0x0001) && (c <= 0x007F)) numbytes++;
+//			else if (c > 0x07FF) numbytes += 3;
+//			else numbytes += 2;
+//		}
+//
+//		if (numbytes > 65535) throw new UTFDataFormatException();     
+//
+//		out.write((numbytes >>> 8) & 0xFF);
+//		out.write(numbytes & 0xFF);
+//		for (int i = 0 ; i < numchars ; i++) {
+//			int c = s.charAt(i);
+//			if ((c >= 0x0001) && (c <= 0x007F)) {
+//				out.write(c);
+//			}
+//			else if (c > 0x07FF) {
+//				out.write(0xE0 | ((c >> 12) & 0x0F));
+//				out.write(0x80 | ((c >>  6) & 0x3F));
+//				out.write(0x80 | (c & 0x3F));
+//				written += 2;
+//			} 
+//			else {
+//				out.write(0xC0 | ((c >>  6) & 0x1F));
+//				out.write(0x80 | (c & 0x3F));
+//				written += 1;
+//			}
+//		}
+//
+//		written += numchars + 2;
+//
+//	}
 
-		int numchars = s.length();
-		int numbytes = 0;
-
-		for (int i = 0 ; i < numchars ; i++) {
-			int c = s.charAt(i);
-			if ((c >= 0x0001) && (c <= 0x007F)) numbytes++;
-			else if (c > 0x07FF) numbytes += 3;
-			else numbytes += 2;
-		}
-
-		if (numbytes > 65535) throw new UTFDataFormatException();     
-
-		out.write((numbytes >>> 8) & 0xFF);
-		out.write(numbytes & 0xFF);
-		for (int i = 0 ; i < numchars ; i++) {
-			int c = s.charAt(i);
-			if ((c >= 0x0001) && (c <= 0x007F)) {
-				out.write(c);
-			}
-			else if (c > 0x07FF) {
-				out.write(0xE0 | ((c >> 12) & 0x0F));
-				out.write(0x80 | ((c >>  6) & 0x3F));
-				out.write(0x80 | (c & 0x3F));
-				written += 2;
-			} 
-			else {
-				out.write(0xC0 | ((c >>  6) & 0x1F));
-				out.write(0x80 | (c & 0x3F));
-				written += 1;
-			}
-		}
-
-		written += numchars + 2;
-
-	}
-
-	/**
-	 * Returns the number of bytes written to this little endian output stream.
-	 * (This class is not thread-safe with respect to this method. It is 
-	 * possible that this number is temporarily less than the actual 
-	 * number of bytes written.)
-	 * @return  the value of the <code>written</code> field.
-	 * @see     java.io.LittleEndianOutputStream#written
-	 */
-	public int size() {
-		return this.written;
-	}
-	
 	public void writeVariableSize(long size) throws IOException {
 		if(size < 253)
 			out.write((int) size);
-		else if(size < 65535)
+		else if(size < 65535){
+			write((int)253);
 			writeUnsignedShort((int) size);
-		else
+		}else{
+			write((int)254);
 			writeUnsignedInt(size);
+		}
 	}
 	
 	public void writeString(String s) throws IOException {

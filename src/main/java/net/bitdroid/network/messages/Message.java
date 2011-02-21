@@ -16,43 +16,32 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public abstract class Message {
+	public abstract EventType getType();
+	
 	/**
 	 * @return the command
 	 */
-	abstract String getCommand();
+	public abstract String getCommand();
 	private int payloadSize;
-	protected BitcoinClientSocket clientSocket;
-	
-	/**
-	 * @return the clientSocket
-	 */
-	public BitcoinClientSocket getClientSocket() {
-		return clientSocket;
-	}
 
-	Message(LittleEndianInputStream in) throws IOException{
-		this.read(in);
-	}
-	
-	public Message(BitcoinClientSocket clientSocket){
-		this.clientSocket = clientSocket;
-	}
-	
-	int getPayloadSize() {
+	public int getPayloadSize() {
 		return payloadSize;
 	}
-	void setPayloadSize(int size) {
+	
+	public void setPayloadSize(int size) {
 		this.payloadSize = size;
 	}
-	abstract void read(LittleEndianInputStream in) throws IOException;
-	abstract void toWire(LittleEndianOutputStream leos) throws IOException;
+	
+	public abstract void read(LittleEndianInputStream in) throws IOException;
+	public abstract void toWire(LittleEndianOutputStream leos) throws IOException;
 
 }

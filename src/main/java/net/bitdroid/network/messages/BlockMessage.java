@@ -15,12 +15,13 @@
  *
  * This file is part the BitDroidNetwork Project.
  */
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
@@ -30,6 +31,9 @@ import net.bitdroid.utils.StringUtils;
  *
  */
 public class BlockMessage extends Message {
+	public EventType getType(){
+		return EventType.BLOCK_TYPE;
+	}
 	private long version = 1;
 	private long timestamp;
 	private long target = 1;
@@ -38,18 +42,11 @@ public class BlockMessage extends Message {
 	private byte[] nonce = new byte[4];
 	private List<Transaction> transactions = new LinkedList<Transaction>();
 
-	/**
-	 * @param clientSocket
-	 */
-	public BlockMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
-
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
 	@Override
-	String getCommand() {
+	public String getCommand() {
 		return "block";
 	}
 
@@ -57,7 +54,7 @@ public class BlockMessage extends Message {
 	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		version = in.readUnsignedInt();
 		if(version != 1)
 			throw new IOException("Block version not supported.");
@@ -71,7 +68,7 @@ public class BlockMessage extends Message {
 		StringUtils.reverse(nonce);
 		long transactionCount = in.readVariableSize();
 		for(int i=0; i<transactionCount; i++){
-			Transaction t = new Transaction(this.getClientSocket());
+			Transaction t = new Transaction();
 			t.read(in);
 			transactions.add(t);
 		}
@@ -81,7 +78,7 @@ public class BlockMessage extends Message {
 	 * @see net.bitdroid.network.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		// Re reverse those byte arrays:
 		byte _previousHash[] = previousHash.clone();
 		StringUtils.reverse(_previousHash);

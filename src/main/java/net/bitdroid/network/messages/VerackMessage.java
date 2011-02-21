@@ -16,26 +16,13 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
-import net.bitdroid.network.wire.LittleEndianInputStream;
-import net.bitdroid.network.wire.LittleEndianOutputStream;
+import net.bitdroid.network.Event.EventType;
 
-public class VerackMessage extends Message {
-	protected final String command = "verack";
-	public VerackMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-		// TODO Auto-generated constructor stub
-	}
-
-	@Override
-	void read(LittleEndianInputStream in) {
-		// This is easy, don't read anything...
-	}
-
-	@Override
-	public void toWire(LittleEndianOutputStream leos){
-		// This is easy: it's empty :-)
+public class VerackMessage extends EmptyMessage {
+	public EventType getType(){
+		return EventType.VERACK_TYPE;
 	}
 
 	@Override

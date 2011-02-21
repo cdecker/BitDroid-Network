@@ -15,40 +15,36 @@
  *
  * This file is part the BitDroidNetwork Project.
  */
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.slf4j.LoggerFactory;
-
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
-import net.bitdroid.utils.StringUtils;
 
 /**
  * @author cdecker
  *
  */
 public class Transaction extends Message {
+	public EventType getType(){
+		return EventType.TRANSACTION_TYPE;
+	}
+
 	private int version;
 	private int locktime;
 	private List<TxInput> inputs = new LinkedList<TxInput>();
 	private List<TxOutput> outputs = new LinkedList<TxOutput>();
-	/**
-	 * @param clientSocket
-	 */
-	public Transaction(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
 
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
 	@Override
-	String getCommand() {
+	public String getCommand() {
 		return "tx";
 	}
 
@@ -56,7 +52,7 @@ public class Transaction extends Message {
 	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		version = in.readInt();
 		
 		// Read inputs
@@ -94,7 +90,7 @@ public class Transaction extends Message {
 	 * @see net.bitdroid.network.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		leos.writeInt(version);
 		
 		// Write inputs

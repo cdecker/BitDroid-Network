@@ -16,29 +16,29 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
 
 public class InventoryMessage extends Message {
+	public EventType getType(){
+		return EventType.INVENTORY_TYPE;
+	}
+
 	public static final int ERROR = 0, MSG_TX = 1, MSG_BLOCK = 2;
 	
 	private List<InventoryItem> items = new LinkedList<InventoryMessage.InventoryItem>();
 
-
-	public InventoryMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
-
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		long count = in.readVariableSize();
 		for(int i=0; i<count; i++){
 			byte[] buffer = new byte[32];
@@ -51,7 +51,14 @@ public class InventoryMessage extends Message {
 	}
 
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
+		leos.writeVariableSize(items.size());
+		for(InventoryItem i : items){
+			leos.writeInt(i.getType());
+			byte b[] = i.getHash().clone();
+			StringUtils.reverse(b);
+			leos.write(b);
+		}
 	}
 	
 	public class InventoryItem {

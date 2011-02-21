@@ -1,4 +1,2 @@
- - Implement `getdata` message
  - Implement `getblocks` message
- - Implement `getheaders` message (is this even used in the mainline client?)
- - Implement `headers` message
+ - Replace the thread based system by non-blocking system

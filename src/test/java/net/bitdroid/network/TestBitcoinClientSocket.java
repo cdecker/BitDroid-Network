@@ -25,9 +25,15 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
-
 import net.bitdroid.network.BitcoinClientSocket.ClientState;
-import net.bitdroid.network.Transaction.TxInput;
+import net.bitdroid.network.messages.BlockMessage;
+import net.bitdroid.network.messages.InventoryMessage;
+import net.bitdroid.network.messages.Message;
+import net.bitdroid.network.messages.PeerAddress;
+import net.bitdroid.network.messages.Transaction;
+import net.bitdroid.network.messages.Transaction.TxInput;
+import net.bitdroid.network.messages.VerackMessage;
+import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
@@ -62,7 +68,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadVerackMessage() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-verack-1.dump");
 		// There's not much to test, it's an empty message.
-		Message m = s.readMessage();
+		Message m = s.readMessage().getSubject();
 		assert(m instanceof VerackMessage);
 		assertEquals(m.getPayloadSize(), 0);
 		assertTrue("Checksum is set on the socket", s.currentState == ClientState.OPEN);
@@ -71,7 +77,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testReadVersionMessage() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
-		VersionMessage m = (VersionMessage)s.readMessage();
+		VersionMessage m = (VersionMessage)s.readMessage().getSubject();
 		assert(m instanceof VersionMessage);
 		assertEquals(m.getPayloadSize(), 85);
 		assertEquals(31700, m.getProtocolVersion());
@@ -87,18 +93,18 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testFullVersionMessageCycle() throws IOException {
 		// Read the original
 		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
-		VersionMessage m = (VersionMessage)s.readMessage();
+		VersionMessage m = (VersionMessage)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-version-1.dump", 105);
 		byte[] output = new byte[105];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(m);
+		s.sendMessage(new Event(null, m));
 		assert(Arrays.equals(buf, output));
 	}
 	
 	@Test
 	public void testReadAddress() throws IOException {
 		LittleEndianInputStream leis = new LittleEndianInputStream(ClassLoader.getSystemResourceAsStream("address.dump"));
-		PeerAddress a = new PeerAddress((BitcoinClientSocket)null);
+		PeerAddress a = new PeerAddress();
 		a.read(leis);
 		assertEquals("/213.200.193.129", a.getAddress().toString());
 		assertEquals(1, a.getServices());
@@ -107,13 +113,13 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testWriteAddress() throws IOException {
-		PeerAddress a = new PeerAddress((BitcoinClientSocket)null);
+		PeerAddress a = new PeerAddress();
 		a.setAddress(InetAddress.getByName("213.200.193.129"));
 		a.setServices(1);
 		a.setPort(36747);
-		a.setReserved(new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
-				(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
-				(byte)0x00,(byte)0xFF,(byte)0xFF});
+		//a.setReserved(new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+		//		(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+		//		(byte)0x00,(byte)0xFF,(byte)0xFF});
 		byte b[] = new byte[26];
 		LittleEndianOutputStream leos = LittleEndianOutputStream.wrap(b);
 		a.toWire(leos);
@@ -128,7 +134,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadInvMessage() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
 		s.currentState = ClientState.OPEN;
-		InventoryMessage m = (InventoryMessage)s.readMessage();
+		InventoryMessage m = (InventoryMessage)s.readMessage().getSubject();
 		assertEquals(8, m.getItems().size());
 	}
 	
@@ -155,7 +161,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadTxMessage() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
 		s.currentState = ClientState.OPEN;
-		Transaction m = (Transaction)s.readMessage();
+		Transaction m = (Transaction)s.readMessage().getSubject();
 		assertEquals(1,m.getInputs().size());
 		TxInput txIn = m.getInputs().get(0);
 		byte[] b = txIn.getPrevious().getHash().clone();
@@ -168,11 +174,8 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadBlockMessage() throws IOException{
 		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
 		s.currentState = ClientState.OPEN;
-		BlockMessage m = (BlockMessage)s.readMessage();
+		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		assertEquals(1, m.getVersion());
-		System.out.println(StringUtils.getHexString(m.getPreviousHash()));
-		System.out.println(StringUtils.getHexString(m.getMerkleRoot()));
-		System.out.println(StringUtils.getHexString(m.getNonce()));
 
 		// The dump is of block 96180, previous hash points to 96179, 
 		assertEquals("0000000000018998eb165333c20db25a170c2e3a468ea05a3ad672c8b678fdc2",StringUtils.getHexString(m.getPreviousHash()));
@@ -185,11 +188,11 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadWriteBlockMessage() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
 		s.currentState = ClientState.OPEN;
-		BlockMessage m = (BlockMessage)s.readMessage();
+		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-block-3.dump", 7266);
 		byte[] output = new byte[7266];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(m);
+		s.sendMessage(new Event(null, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
 
@@ -197,13 +200,67 @@ public class TestBitcoinClientSocket extends TestCase {
 	public void testReadWriteTransaction() throws IOException {
 		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
 		s.currentState = ClientState.OPEN;
-		Transaction m = (Transaction)s.readMessage();
+		Transaction m = (Transaction)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-tx-14.dump", 282);
 		byte[] output = new byte[282];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(m);
-		System.out.println(StringUtils.getHexString(buf));
-		System.out.println(StringUtils.getHexString(output));
+		s.sendMessage(new Event(null, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
+	}
+	
+	@Test
+	public void testReadWriteAddrMessage() throws IOException {
+		BitcoinClientSocket s = prepareWithDump("bitcoin-addr-11.dump");
+		s.currentState = ClientState.OPEN;
+		Message m = s.readMessage().getSubject();
+		byte[] buf = readDump("bitcoin-addr-11.dump", 5335);
+		byte[] output = new byte[5335];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(new Event(null, m));
+		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
+	}
+
+	@Test
+	public void testReadWriteInventoryMessage() throws IOException {
+		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
+		s.currentState = ClientState.OPEN;
+		Message m = s.readMessage().getSubject();
+		byte[] buf = readDump("bitcoin-inv-2.dump", 313);
+		byte[] output = new byte[313];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(new Event(null, m));
+		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
+	}
+
+	@Test
+	public void testReadWriteGetDataMessage() throws IOException {
+		BitcoinClientSocket s = prepareWithDump("bitcoin-getdata-72.dump");
+		s.currentState = ClientState.OPEN;
+		Message m = s.readMessage().getSubject();
+		byte[] buf = readDump("bitcoin-getdata-72.dump", 61);
+		byte[] output = new byte[61];
+		s.outputStream = LittleEndianOutputStream.wrap(output);
+		s.sendMessage(new Event(null, m));
+		assertEquals(buf, output);
+	}
+	
+	/**
+	 * Simpler helper 
+	 * @param expected
+	 * @param actual
+	 * @throws IOException
+	 */
+	protected void assertEquals(byte[] expected, byte[] actual) throws IOException {
+		if(expected.length != actual.length){
+			LOG.error("Buffer lengths do not match!");
+			return;
+		}
+		for(int i=0; i<expected.length; i++){
+			if(expected[i] != actual[i]){
+				LOG.info(StringUtils.getHexString(expected));
+				LOG.info(StringUtils.getHexString(actual));
+				fail("Buffers do not match!");
+			}
+		}
 	}
 }

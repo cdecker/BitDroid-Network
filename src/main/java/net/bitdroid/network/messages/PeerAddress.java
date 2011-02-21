@@ -16,36 +16,40 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Arrays;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public class PeerAddress extends Message implements Comparable<PeerAddress>{
+	public EventType getType(){
+		return EventType.PART_TYPE;
+	}
+	
 	private long services;
-	private byte reserved[];
-	byte[] getReserved() {
+	private byte reserved[] = new byte[8];
+	private int lastSeen = 0;
+
+	public PeerAddress(){
+		reserved = new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0xFF,(byte)0xFF};
+	}
+
+	public byte[] getReserved() {
 		return reserved;
 	}
 
-	void setReserved(byte[] reserved) {
+	public void setReserved(byte[] reserved) {
 		this.reserved = reserved;
 	}
 
 	private InetAddress address;
 	private int port;
-	
-	PeerAddress(LittleEndianInputStream in) throws IOException{
-		super(in);
-	}
-	
-	public PeerAddress(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
 
 	/**
 	 * @param services the services to set
@@ -89,8 +93,22 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 		return port;
 	}
 
+	/**
+	 * @return the lastSeen
+	 */
+	public int getLastSeen() {
+		return lastSeen;
+	}
+
+	/**
+	 * @param lastSeen the lastSeen to set
+	 */
+	public void setLastSeen(int lastSeen) {
+		this.lastSeen = lastSeen;
+	}
+
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		setServices(in.readLong());
 		reserved = new byte[12];
 		in.read(reserved);
@@ -105,7 +123,7 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	}
 
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		leos.writeLong(services);
 		leos.write(reserved);
 		leos.write(address.getAddress());
@@ -117,7 +135,7 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	public String getCommand() {
 		return null;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

@@ -15,15 +15,24 @@
  *
  * This file is part the BitDroidNetwork Project.
  */
+package net.bitdroid.network.messages;
 
-package net.bitdroid.network;
-
+import net.bitdroid.network.Event.EventType;
 
 /**
  * @author cdecker
  *
  */
-public interface BitcoinEventListener {
-	public void eventReceived(Event e);
-	public void messageSent(Event e);
+public class GetaddrMessage extends EmptyMessage {
+	public EventType getType(){
+		return EventType.GET_ADDR_TYPE;
+	}
+
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.Message#getCommand()
+	 */
+	@Override
+	public String getCommand() {
+		return "getaddr";
+	}
 }

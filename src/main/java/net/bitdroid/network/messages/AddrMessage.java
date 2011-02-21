@@ -15,12 +15,13 @@
  *
  * This file is part the BitDroidNetwork Project.
  */
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -29,14 +30,9 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
  *
  */
 public class AddrMessage extends Message {
-
-	/**
-	 * @param clientSocket
-	 */
-	public AddrMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
-
+	public EventType getType(){
+		return EventType.ADDR_TYPE;
+	}	
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
@@ -58,13 +54,13 @@ public class AddrMessage extends Message {
 	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
-		// TODO avoid this hack by reading the prefix exactly
+	public void read(LittleEndianInputStream in) throws IOException {
 		// Read the variable length:
 		long count = in.readVariableSize();
 		for(long i=0; i<count; i++){
 			int timestamp = in.readInt(); 
-			PeerAddress peer = new PeerAddress(getClientSocket());
+			PeerAddress peer = new PeerAddress();
+			peer.setLastSeen(timestamp);
 			peer.read(in);
 			addresses.add(peer);
 		}
@@ -75,8 +71,11 @@ public class AddrMessage extends Message {
 	 */
 	@Override
 	public void toWire(LittleEndianOutputStream leos) throws IOException {
-		// TODO Auto-generated method stub
-		throw new RuntimeException("Not yet implemented");
+		leos.writeVariableSize(addresses.size());
+		for(PeerAddress p : addresses){
+			leos.writeInt(p.getLastSeen());
+			p.toWire(leos);
+		}
 	}
 	
 	/* (non-Javadoc)

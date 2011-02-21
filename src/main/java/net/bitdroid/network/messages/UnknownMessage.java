@@ -16,10 +16,11 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -28,13 +29,13 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
  *
  */
 public class UnknownMessage extends Message {
+	public EventType getType(){
+		return EventType.UNKNOWN_TYPE;
+	}
+
 	private byte[] content;
 	private String command;
 	
-	public UnknownMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
-
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
@@ -42,6 +43,7 @@ public class UnknownMessage extends Message {
 	public String getCommand() {
 		return command;
 	}
+	
 	public void setCommand(String command){
 		this.command = command;
 	}
@@ -50,7 +52,7 @@ public class UnknownMessage extends Message {
 	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		content = new byte[getPayloadSize()];
 		in.read(content);
 	}
@@ -59,9 +61,10 @@ public class UnknownMessage extends Message {
 	 * @see net.bitdroid.network.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		throw new RuntimeException("Why would I ever try to send a message I don't know the meaning of?");
 	}
+	
 	public String toString(){
 		return "UnknownMessage[" + getCommand() + "]";
 	}

@@ -29,10 +29,19 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.bitdroid.network.messages.AddrMessage;
+import net.bitdroid.network.messages.BlockMessage;
+import net.bitdroid.network.messages.GetDataMessage;
+import net.bitdroid.network.messages.InventoryMessage;
+import net.bitdroid.network.messages.Message;
+import net.bitdroid.network.messages.Transaction;
+import net.bitdroid.network.messages.UnknownMessage;
+import net.bitdroid.network.messages.VerackMessage;
+import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
-public class BitcoinClientSocket implements Runnable {
+public class BitcoinClientSocket implements BitcoinNetwork, Runnable {
 
 	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
 	static final byte[] testnetMagic = new byte[]{(byte)0xFA,(byte)0xBF,(byte)0xB5,(byte)0xDA};
@@ -42,9 +51,9 @@ public class BitcoinClientSocket implements Runnable {
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
 	protected long nonce;
 	protected Socket socket;
-	
+
 	public enum ClientState {
-	    HANDSHAKE, OPEN, SHUTDOWN
+		HANDSHAKE, OPEN, SHUTDOWN
 	};
 	protected ClientState currentState = ClientState.HANDSHAKE;
 
@@ -61,7 +70,7 @@ public class BitcoinClientSocket implements Runnable {
 	 */
 	BitcoinClientSocket() {
 	}
-	
+
 	public BitcoinClientSocket(Socket socket) throws IOException{
 		inputStream = socket.getInputStream();
 		outputStream = socket.getOutputStream();
@@ -78,8 +87,8 @@ public class BitcoinClientSocket implements Runnable {
 	public void addListener(BitcoinEventListener listener){
 		this.eventListeners.add(listener);
 	}
-	
-	protected Message readMessage() throws IOException{
+
+	protected Event readMessage() throws IOException{
 		// Read magic
 		byte buf[] = new byte[4];
 		inputStream.read(buf);
@@ -100,7 +109,7 @@ public class BitcoinClientSocket implements Runnable {
 			inputStream.read(checksum);
 			// TODO add switch to check the checksum.
 		}
-		
+
 		// Now read the buffer and wrap it into a LittleEndianInputStream
 		// This is mainly done to isolate the messages from each other and
 		// keep the data stream in sync.
@@ -110,38 +119,49 @@ public class BitcoinClientSocket implements Runnable {
 
 		// Boilerplate to select the right message to initialize.
 		Message message;
-		if("version".equalsIgnoreCase(command))
-			message = new VersionMessage(this);
-		else if("verack".equalsIgnoreCase(command)){
-			message = new VerackMessage(this);
+		Event event = new Event();
+		event.setOrigin(this);
+		if("version".equalsIgnoreCase(command)){
+			message = new VersionMessage();
+
+		}else if("verack".equalsIgnoreCase(command)){
+			message = new VerackMessage();
 			// Just set the socket to require checksum flag
 			currentState = ClientState.OPEN;
-		}else if("inv".equalsIgnoreCase(command))
-			message = new InventoryMessage(this);
-		else if("addr".equalsIgnoreCase(command))
-			message = new AddrMessage(this);
-		else if("tx".equalsIgnoreCase(command))
-			message = new Transaction(this);
-		else if("block".equalsIgnoreCase(command))
-			message = new BlockMessage(this);
-		else{
-			message = new UnknownMessage(this);
+
+		}else if("inv".equalsIgnoreCase(command)){
+			message = new InventoryMessage();
+
+		}else if("addr".equalsIgnoreCase(command)){
+			message = new AddrMessage();
+
+		}else if("tx".equalsIgnoreCase(command)){
+			message = new Transaction();
+			
+		}else if("getdata".equalsIgnoreCase(command)){
+			message = new GetDataMessage();
+		}else if("block".equalsIgnoreCase(command)){
+			message = new BlockMessage();
+		}else{
+			message = new UnknownMessage();
 			((UnknownMessage)message).setCommand(command);
 		}
 
 		message.setPayloadSize(size);
 		// And now each message knows how to read its format:
 		message.read(leis);
-		return message;
+		event.setSubject(message);
+		return event;
 
 	}
 
 	public void run() {
-		addListener(new BitcoinClientDriver());
+		addListener(new BitcoinClientDriver(this));
 		try{
 			while(currentState != ClientState.SHUTDOWN && isConnected()){
 				// Read the message
-				Message mess = readMessage();
+				Event mess = readMessage();
+
 				// React to the messages
 				// Dispatch to listeners
 				for(BitcoinEventListener listener : eventListeners)
@@ -150,7 +170,8 @@ public class BitcoinClientSocket implements Runnable {
 		}catch(IOException ioe){
 			currentState = ClientState.SHUTDOWN;
 		}finally{
-			// TODO disconnect
+			if(currentState == ClientState.SHUTDOWN)
+				close();
 		}
 	}
 
@@ -158,14 +179,14 @@ public class BitcoinClientSocket implements Runnable {
 		return socket.isConnected() && currentState != ClientState.SHUTDOWN;
 	}
 
-	public synchronized void sendMessage(Message message) throws IOException {
+	public synchronized void sendMessage(Event event) throws IOException {
 		for(BitcoinEventListener listener : eventListeners)
-			listener.messageSent(message);
+			listener.messageSent(event);
 		ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
-		message.toWire(new LittleEndianOutputStream(outBuffer));
+		event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
 		outputStream.write(magic);
 		// write the command
-		String command = message.getCommand();
+		String command = event.getSubject().getCommand();
 		outputStream.write(command.getBytes());
 		// Pad with 0s
 		for(int i=command.length(); i<12; i++)
@@ -176,10 +197,10 @@ public class BitcoinClientSocket implements Runnable {
 				(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)});
 		if(currentState == ClientState.OPEN)
 			outputStream.write(calculateChecksum(outBuffer.toByteArray()));
-		
+
 		outputStream.write(outBuffer.toByteArray());
 	}
-	
+
 	byte[] calculateChecksum(byte[] b){
 		byte[] res = new byte[4];
 		try {
@@ -195,7 +216,7 @@ public class BitcoinClientSocket implements Runnable {
 		}
 		return res;
 	}
-	
+
 	public void close(){
 		try {
 			socket.close();

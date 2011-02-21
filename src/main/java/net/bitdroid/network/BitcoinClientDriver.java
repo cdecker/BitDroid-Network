@@ -20,6 +20,11 @@ package net.bitdroid.network;
 
 import java.io.IOException;
 
+import net.bitdroid.network.Event.EventType;
+import net.bitdroid.network.messages.PingMessage;
+import net.bitdroid.network.messages.VerackMessage;
+import net.bitdroid.network.messages.VersionMessage;
+
 
 
 
@@ -31,40 +36,40 @@ import java.io.IOException;
  *
  */
 public class BitcoinClientDriver implements BitcoinEventListener {
+	private BitcoinNetwork network;
 
-	public BitcoinClientDriver(){
+	public BitcoinClientDriver(BitcoinNetwork network){
+		this.network = network;
 	}
 
-	public void eventReceived(Message message) {
-		if(message instanceof VersionMessage){
+	public void eventReceived(Event event) {
+		if(event.getType() == EventType.VERSION_TYPE){
 			// If we got the message out here in userland the protocol version is supported
 			// Create a verack and send it back
-			VersionMessage hisVersion = (VersionMessage)message;
-			VerackMessage verack = new VerackMessage(message.getClientSocket());
-			VersionMessage version = new VersionMessage(message.getClientSocket());
-			version.setClientVersion("BitDroid 0.1");
-			version.setProtocolVersion(31700);
+			VersionMessage hisVersion = (VersionMessage)event.getSubject();
+			VerackMessage verack = new VerackMessage();
+			VersionMessage version = new VersionMessage();
 			version.setMyAddress(hisVersion.getYourAddress());
 			version.setYourAddress(hisVersion.getMyAddress());
 			version.setTimestamp(System.currentTimeMillis());
 			try {
-				message.getClientSocket().sendMessage(version);
-				message.getClientSocket().sendMessage(verack);
+				network.sendMessage(new Event(event.getOrigin(), version));
+				network.sendMessage(new Event(event.getOrigin(), verack));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}else if(message instanceof AddrMessage){
+		}else if(event.getType() == EventType.ADDR_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
-				message.getClientSocket().sendMessage(new PingMessage(message.getClientSocket()));
+				network.sendMessage(new Event(event.getOrigin(), new PingMessage()));
 			} catch (IOException e) {
-				
+
 			}
 
 		}
 	}
 
-	public void messageSent(Message message) {}
+	public void messageSent(Event event) {}
 
 }

@@ -16,16 +16,18 @@
  * This file is part the BitDroidNetwork Project.
  */
 
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
+import net.bitdroid.network.NIOBitcoinNetwork;
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public class VersionMessage extends Message {
-	public VersionMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
+	public EventType getType(){
+		return EventType.VERSION_TYPE;
 	}
 
 	private long timestamp;
@@ -38,35 +40,35 @@ public class VersionMessage extends Message {
 		this.timestamp = timestamp;
 	}
 
-	private long protocolVersion = 31700;
+	private long protocolVersion = NIOBitcoinNetwork.PROTOCOL_VERSION;
 	
 	// Default services for this client 
 	private byte[] localServices = new byte[]{1,0,0,0,0,0,0,0};
 	private PeerAddress myAddress, yourAddress;
 	private long nonce;
-	private String clientVersion;
+	private String clientVersion = NIOBitcoinNetwork.CLIENT_NAME;
 	private long height;
 	
 	
 	/**
 	 * @return the height
 	 */
-	final long getHeight() {
+	public final long getHeight() {
 		return height;
 	}
 
 	/**
 	 * @param height the height to set
 	 */
-	final void setHeight(long height) {
+	public final void setHeight(long height) {
 		this.height = height;
 	}
 
-	long getNonce() {
+	public long getNonce() {
 		return nonce;
 	}
 
-	void setNonce(long nonce) {
+	public void setNonce(long nonce) {
 		this.nonce = nonce;
 	}
 
@@ -87,7 +89,7 @@ public class VersionMessage extends Message {
 	}
 
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void read(LittleEndianInputStream in) throws IOException {
 		// Read the actual version
 		setProtocolVersion(in.readUnsignedInt());
 		if(getProtocolVersion() < 20900)
@@ -98,11 +100,14 @@ public class VersionMessage extends Message {
 		timestamp = in.readLong();
 		byte b[] = new byte[26];
 		in.read(b);
-		setMyAddress(new PeerAddress(LittleEndianInputStream.wrap(b)));
+		PeerAddress a = new PeerAddress();
+		a.read(LittleEndianInputStream.wrap(b));
+		setMyAddress(a);
 		in.read(b);
-		setYourAddress(new PeerAddress(LittleEndianInputStream.wrap(b)));
+		a = new PeerAddress();
+		a.read(LittleEndianInputStream.wrap(b));
+		setYourAddress(a);
 		setNonce(in.readLong());
-		clientSocket.setNonce(getNonce());
 		setClientVersion(in.readString());
 		setHeight(in.readUnsignedInt());
 	}

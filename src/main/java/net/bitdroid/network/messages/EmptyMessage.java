@@ -15,7 +15,7 @@
  *
  * This file is part the BitDroidNetwork Project.
  */
-package net.bitdroid.network;
+package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
@@ -23,38 +23,29 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 /**
+ * This class simply adds empty implementations of the read and toWire methods.
+ * Mainly to refrain from having to state it all over again in the various
+ * classes.
+ * 
  * @author cdecker
- *
+ * 
  */
-public class GetaddrMessage extends Message {
-
-	/**
-	 * @param clientSocket
-	 */
-	public GetaddrMessage(BitcoinClientSocket clientSocket) {
-		super(clientSocket);
-	}
-
+public abstract class EmptyMessage extends Message{
+	
 	/* (non-Javadoc)
-	 * @see net.bitdroid.network.Message#getCommand()
+	 * @see net.bitdroid.network.messages.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
-	String getCommand() {
-		return "getaddr";
+	public void read(LittleEndianInputStream in) throws IOException {
+		// It's empty, nothing to do here	
 	}
-
+	
 	/* (non-Javadoc)
-	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
+	 * @see net.bitdroid.network.messages.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
-	void read(LittleEndianInputStream in) throws IOException {
+	public void toWire(LittleEndianOutputStream leos) throws IOException {
+		// Nothing here either :-)	
 	}
-
-	/* (non-Javadoc)
-	 * @see net.bitdroid.network.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
-	 */
-	@Override
-	void toWire(LittleEndianOutputStream leos) throws IOException {
-	}
-
+	
 }

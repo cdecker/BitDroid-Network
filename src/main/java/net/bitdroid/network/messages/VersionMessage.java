@@ -20,7 +20,7 @@ package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
-import net.bitdroid.network.NIOBitcoinNetwork;
+import net.bitdroid.network.NonBlockingBitcoinReactorNetwork;
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
@@ -40,13 +40,13 @@ public class VersionMessage extends Message {
 		this.timestamp = timestamp;
 	}
 
-	private long protocolVersion = NIOBitcoinNetwork.PROTOCOL_VERSION;
+	private long protocolVersion = NonBlockingBitcoinReactorNetwork.PROTOCOL_VERSION;
 	
 	// Default services for this client 
 	private byte[] localServices = new byte[]{1,0,0,0,0,0,0,0};
 	private PeerAddress myAddress, yourAddress;
 	private long nonce;
-	private String clientVersion = NIOBitcoinNetwork.CLIENT_NAME;
+	private String clientVersion = NonBlockingBitcoinReactorNetwork.CLIENT_NAME;
 	private long height;
 	
 	

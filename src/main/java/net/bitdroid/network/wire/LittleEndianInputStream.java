@@ -348,8 +348,16 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	public static LittleEndianInputStream wrap(final byte[] b){
+		return wrap(ByteBuffer.wrap(b));
+	}
+
+	/**
+	 * @param b
+	 * @return
+	 */
+	public static LittleEndianInputStream wrap(final ByteBuffer b) {
 		LittleEndianInputStream leis = new LittleEndianInputStream(new InputStream() {
-			ByteBuffer bb = ByteBuffer.wrap(b);
+			ByteBuffer bb = b;
 			public synchronized int read() throws IOException {
 				if (!bb.hasRemaining()) {
 					return -1;

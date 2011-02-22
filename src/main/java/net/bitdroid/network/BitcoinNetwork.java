@@ -18,14 +18,47 @@
 package net.bitdroid.network;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * @author cdecker
  *
  */
-public interface BitcoinNetwork {
+public abstract class BitcoinNetwork {
 	public static final int PROTOCOL_VERSION = 31700;
 	public static final String CLIENT_NAME = "BitDroid 0.1";
-	public void sendMessage(Event event) throws IOException;
+	public abstract void sendMessage(Event event) throws IOException;
+	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
+	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
+	private Logger log = LoggerFactory.getLogger(BitcoinNetwork.class);
+	public void addListener(BitcoinEventListener listener){
+		this.eventListeners.add(listener);
+	}
+	
+	public void publishReceivedEvent(Event e){
+		log.debug("Publishing received message {}", e);
+		for(BitcoinEventListener listener : eventListeners)
+			try{
+				listener.eventReceived(e);
+			}catch(Exception ex){
+				log.error("Possible error in a listener publishing incoming event.", ex);
+			}
+	}
+
+	public void publishSentEvent(Event e){
+		log.debug("Publishing sent message {}", e);
+		for(BitcoinEventListener listener : eventListeners)
+			try{
+				listener.messageSent(e);
+			}catch(Exception ex){
+				log.error("Possible error in a listener publishing outgoing event.", ex);
+			}
+	}
+
+
 }

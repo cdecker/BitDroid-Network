@@ -25,7 +25,7 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
-import net.bitdroid.network.BitcoinClientSocket.ClientState;
+import net.bitdroid.network.ThreadedBitcoinReactor.ClientState;
 import net.bitdroid.network.messages.BlockMessage;
 import net.bitdroid.network.messages.InventoryMessage;
 import net.bitdroid.network.messages.Message;
@@ -46,8 +46,8 @@ public class TestBitcoinClientSocket extends TestCase {
 
 	Logger LOG = LoggerFactory.getLogger(TestBitcoinClientSocket.class);
 	
-	protected BitcoinClientSocket prepareWithDump(String filename) throws IOException{
-		BitcoinClientSocket s = new BitcoinClientSocket();
+	protected ThreadedBitcoinReactor prepareWithDump(String filename) throws IOException{
+		ThreadedBitcoinReactor s = new ThreadedBitcoinReactor();
 		s.inputStream = ClassLoader.getSystemResourceAsStream(filename);
 		return s;
 	}
@@ -66,7 +66,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadVerackMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-verack-1.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-verack-1.dump");
 		// There's not much to test, it's an empty message.
 		Message m = s.readMessage().getSubject();
 		assert(m instanceof VerackMessage);
@@ -76,7 +76,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadVersionMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-version-1.dump");
 		VersionMessage m = (VersionMessage)s.readMessage().getSubject();
 		assert(m instanceof VersionMessage);
 		assertEquals(m.getPayloadSize(), 85);
@@ -92,7 +92,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testFullVersionMessageCycle() throws IOException {
 		// Read the original
-		BitcoinClientSocket s = prepareWithDump("bitcoin-version-1.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-version-1.dump");
 		VersionMessage m = (VersionMessage)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-version-1.dump", 105);
 		byte[] output = new byte[105];
@@ -132,7 +132,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadInvMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-inv-2.dump");
 		s.currentState = ClientState.OPEN;
 		InventoryMessage m = (InventoryMessage)s.readMessage().getSubject();
 		assertEquals(8, m.getItems().size());
@@ -140,7 +140,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testChecksum() throws IOException{
-		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-inv-2.dump");
 		InputStream in = ClassLoader.getSystemResourceAsStream("bitcoin-inv-2.dump");
 		in.skip(20);
 		byte[] checksum = new byte[4];
@@ -159,7 +159,7 @@ public class TestBitcoinClientSocket extends TestCase {
      */
 	@Test
 	public void testReadTxMessage() throws IOException{
-		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-tx-14.dump");
 		s.currentState = ClientState.OPEN;
 		Transaction m = (Transaction)s.readMessage().getSubject();
 		assertEquals(1,m.getInputs().size());
@@ -172,7 +172,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadBlockMessage() throws IOException{
-		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-block-3.dump");
 		s.currentState = ClientState.OPEN;
 		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		assertEquals(1, m.getVersion());
@@ -186,7 +186,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadWriteBlockMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-block-3.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-block-3.dump");
 		s.currentState = ClientState.OPEN;
 		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-block-3.dump", 7266);
@@ -198,7 +198,7 @@ public class TestBitcoinClientSocket extends TestCase {
 
 	@Test
 	public void testReadWriteTransaction() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-tx-14.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-tx-14.dump");
 		s.currentState = ClientState.OPEN;
 		Transaction m = (Transaction)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-tx-14.dump", 282);
@@ -210,7 +210,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	
 	@Test
 	public void testReadWriteAddrMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-addr-11.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-addr-11.dump");
 		s.currentState = ClientState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-addr-11.dump", 5335);
@@ -222,7 +222,7 @@ public class TestBitcoinClientSocket extends TestCase {
 
 	@Test
 	public void testReadWriteInventoryMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-inv-2.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-inv-2.dump");
 		s.currentState = ClientState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-inv-2.dump", 313);
@@ -234,7 +234,7 @@ public class TestBitcoinClientSocket extends TestCase {
 
 	@Test
 	public void testReadWriteGetDataMessage() throws IOException {
-		BitcoinClientSocket s = prepareWithDump("bitcoin-getdata-72.dump");
+		ThreadedBitcoinReactor s = prepareWithDump("bitcoin-getdata-72.dump");
 		s.currentState = ClientState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-getdata-72.dump", 61);

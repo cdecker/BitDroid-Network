@@ -24,9 +24,6 @@ import java.io.OutputStream;
 import java.io.UTFDataFormatException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import javax.sound.sampled.ReverbType;
 
 /**
  * A little endian output stream writes primitive Java numbers 

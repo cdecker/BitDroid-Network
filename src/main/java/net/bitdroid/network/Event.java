@@ -105,24 +105,28 @@ public class Event {
 	public void setOrigin(Object origin) {
 		this.origin = origin;
 	}
+	
 	/**
 	 * @return the handled
 	 */
 	public boolean isHandled() {
 		return handled;
 	}
+	
 	/**
 	 * @param handled the handled to set
 	 */
 	public void setHandled(boolean handled) {
 		this.handled = handled;
 	}
+	
 	/**
 	 * @return the propagate
 	 */
 	public boolean isPropagate() {
 		return propagate;
 	}
+	
 	/**
 	 * @param propagate the propagate to set
 	 */

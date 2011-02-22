@@ -23,7 +23,7 @@ import net.bitdroid.network.Event.EventType;
  * @author cdecker
  *
  */
-public class GetaddrMessage extends EmptyMessage {
+public class GetAddrMessage extends EmptyMessage {
 	public EventType getType(){
 		return EventType.GET_ADDR_TYPE;
 	}

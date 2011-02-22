@@ -21,12 +21,10 @@ package net.bitdroid.network;
 import java.io.IOException;
 
 import net.bitdroid.network.Event.EventType;
+import net.bitdroid.network.messages.PeerAddress;
 import net.bitdroid.network.messages.PingMessage;
 import net.bitdroid.network.messages.VerackMessage;
 import net.bitdroid.network.messages.VersionMessage;
-
-
-
 
 /**
  * Default driver that automatically responds to certain messages to keep the
@@ -57,6 +55,18 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				network.sendMessage(new Event(event.getOrigin(), verack));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else if(event.getType() == EventType.CONNECTION_ACCEPTED_TYPE){
+			VerackMessage verack = new VerackMessage();
+			VersionMessage version = new VersionMessage();
+			version.setMyAddress(new PeerAddress());
+			version.setYourAddress(new PeerAddress());
+			version.setTimestamp(System.currentTimeMillis());
+			try {
+				network.sendMessage(new Event(event.getOrigin(), version));
+				network.sendMessage(new Event(event.getOrigin(), verack));
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}else if(event.getType() == EventType.ADDR_TYPE){

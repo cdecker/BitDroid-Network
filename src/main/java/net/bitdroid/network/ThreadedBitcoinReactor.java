@@ -41,7 +41,7 @@ import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
-public class BitcoinClientSocket implements BitcoinNetwork, Runnable {
+public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 
 	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
 	static final byte[] testnetMagic = new byte[]{(byte)0xFA,(byte)0xBF,(byte)0xB5,(byte)0xDA};
@@ -68,16 +68,16 @@ public class BitcoinClientSocket implements BitcoinNetwork, Runnable {
 	/**
 	 * C'tor only for unit tests.
 	 */
-	BitcoinClientSocket() {
+	ThreadedBitcoinReactor() {
 	}
 
-	public BitcoinClientSocket(Socket socket) throws IOException{
+	public ThreadedBitcoinReactor(Socket socket) throws IOException{
 		inputStream = socket.getInputStream();
 		outputStream = socket.getOutputStream();
 		this.socket = socket;
 	}
 
-	public BitcoinClientSocket(Socket socket, boolean testnet) throws IOException{
+	public ThreadedBitcoinReactor(Socket socket, boolean testnet) throws IOException{
 		inputStream = socket.getInputStream();
 		outputStream = socket.getOutputStream();
 		this.socket = socket;

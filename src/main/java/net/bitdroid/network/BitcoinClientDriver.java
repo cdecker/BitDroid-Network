@@ -19,12 +19,19 @@
 package net.bitdroid.network;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.PeerAddress;
 import net.bitdroid.network.messages.PingMessage;
 import net.bitdroid.network.messages.VerackMessage;
 import net.bitdroid.network.messages.VersionMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default driver that automatically responds to certain messages to keep the
@@ -35,13 +42,33 @@ import net.bitdroid.network.messages.VersionMessage;
  */
 public class BitcoinClientDriver implements BitcoinEventListener {
 	private BitcoinNetwork network;
+	Logger log = LoggerFactory.getLogger(BitcoinClientDriver.class);
 
 	public BitcoinClientDriver(BitcoinNetwork network){
 		this.network = network;
 	}
 
+	Map<Object, Integer> handshakeState = new HashMap<Object, Integer>(); 
+
 	public void eventReceived(Event event) {
-		if(event.getType() == EventType.VERSION_TYPE){
+		if(event.getType() == EventType.OUTGOING_CONNECTION_TYPE){
+			try {
+				VersionMessage version = new VersionMessage();
+				PeerAddress p = new PeerAddress();
+				p.setAddress(InetAddress.getLocalHost());
+				p.setPort(8334);
+				version.setMyAddress(p);
+				version.setYourAddress(p);
+				version.setTimestamp(System.currentTimeMillis());
+				network.sendMessage(new Event(event.getOrigin(), version));
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else if(event.getType() == EventType.VERSION_TYPE){
 			// If we got the message out here in userland the protocol version is supported
 			// Create a verack and send it back
 			VersionMessage hisVersion = (VersionMessage)event.getSubject();
@@ -54,27 +81,14 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				network.sendMessage(new Event(event.getOrigin(), version));
 				network.sendMessage(new Event(event.getOrigin(), verack));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}else if(event.getType() == EventType.CONNECTION_ACCEPTED_TYPE){
-			VerackMessage verack = new VerackMessage();
-			VersionMessage version = new VersionMessage();
-			version.setMyAddress(new PeerAddress());
-			version.setYourAddress(new PeerAddress());
-			version.setTimestamp(System.currentTimeMillis());
-			try {
-				network.sendMessage(new Event(event.getOrigin(), version));
-				network.sendMessage(new Event(event.getOrigin(), verack));
-			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}else if(event.getType() == EventType.ADDR_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
 				network.sendMessage(new Event(event.getOrigin(), new PingMessage()));
-			} catch (IOException e) {
-
+			} catch (IOException e){
+log.error("Error sending ping", e);
 			}
 
 		}

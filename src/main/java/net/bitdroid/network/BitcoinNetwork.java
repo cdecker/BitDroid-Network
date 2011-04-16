@@ -31,9 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BitcoinNetwork {
 	public static final int PROTOCOL_VERSION = 31700;
-	public static final String CLIENT_NAME = "BitDroid 0.1";
 	public abstract void sendMessage(Event event) throws IOException;
-	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
 	private Logger log = LoggerFactory.getLogger(BitcoinNetwork.class);
 	public void addListener(BitcoinEventListener listener){

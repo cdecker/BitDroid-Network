@@ -17,14 +17,15 @@
  */
 package net.bitdroid.network;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Queue;
 import java.util.Set;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.AddrMessage;
+import net.bitdroid.network.messages.GetAddrMessage;
 import net.bitdroid.network.messages.PeerAddress;
 
 /**
@@ -47,10 +48,18 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 	 * @see net.bitdroid.network.BitcoinEventListener#eventReceived(net.bitdroid.network.Event)
 	 */
 	public synchronized void eventReceived(Event e) {
-		if(e.getType() == EventType.CONNECTION_ACCEPTED_TYPE){
+		if(e.getType() == EventType.INCOMING_CONNECTION_TYPE){
 			connected++;
 		}else if(e.getType() == EventType.DISCONNECTED_TYPE){
 			connected--;
+		}else if(e.getSubject() instanceof GetAddrMessage){
+			Event event = new Event(e.getOrigin(), new GetAddrMessage());
+			try {
+				network.sendMessage(event);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}else if(e.getSubject() instanceof AddrMessage){
 			AddrMessage am = (AddrMessage)e.getSubject();
 			addresses.addAll(am.getAddresses());

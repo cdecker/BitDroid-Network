@@ -100,7 +100,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		// Read magic
 		ByteBuffer buf = ByteBuffer.allocate(4);
 		socketChannel.read(buf);
-		if(!Arrays.equals(buf.array(), magic))
+		if(!Arrays.equals(buf.array(), ProtocolVersion.getMagic()))
 			throw new IOException("Stream is out of sync. Probably the other client is missbehaving?");
 		buf = ByteBuffer.allocate(12);
 		socketChannel.read(buf);
@@ -186,8 +186,8 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 							SelectionKey key = change.socket.keyFor(selector);
 							key.interestOps(change.ops);
 						case ChangeRequest.REGISTER:
-				              change.socket.register(selector, change.ops);
-				              break;
+							change.socket.register(selector, change.ops);
+							break;
 						}
 					}
 					this.pendingChanges.clear();
@@ -207,12 +207,21 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 					// Check what event is available and deal with it
 					if (key.isConnectable()) {
+						try {
+							SocketChannel channel =(SocketChannel) key.channel(); 
+							channel.finishConnect();
+							socketStates.put(channel, new SocketState());
+						} catch (IOException e) {
+							// Cancel the channel's registration with our selector
+							key.cancel();
+							return;
+						}
+						//key.interestOps(SelectionKey.OP_READ); // By default register interest in reading, this will be overwritten by the below listeners
 						Event e = new Event();
 						e.setOrigin(key.channel());
-						e.setType(EventType.CONNECTION_ACCEPTED_TYPE);
+						e.setType(EventType.OUTGOING_CONNECTION_TYPE);
 						publishReceivedEvent(e);
-						key.interestOps(SelectionKey.OP_WRITE);
-			          } else if (key.isAcceptable()) {
+					} else if (key.isAcceptable()) {
 						accept(key);
 					} else if (key.isReadable()) {
 						try{
@@ -258,7 +267,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 				publishSentEvent(event);
 				ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
 				event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
-				socketChannel.write(ByteBuffer.wrap(magic));
+				socketChannel.write(ByteBuffer.wrap(ProtocolVersion.getMagic()));
 				// write the command
 				String command = event.getSubject().getCommand();
 				socketChannel.write(ByteBuffer.wrap(command.getBytes()));
@@ -298,7 +307,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		socketStates.put(socketChannel, new SocketState());
 		Event e = new Event();
 		e.setOrigin(socketChannel);
-		e.setType(EventType.CONNECTION_ACCEPTED_TYPE);
+		e.setType(EventType.INCOMING_CONNECTION_TYPE);
 		publishReceivedEvent(e);
 	}
 
@@ -332,17 +341,17 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 			socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
 			socketChannel.connect(new InetSocketAddress(a.getAddress(), a.getPort()));
+			// Queue a channel registration since the caller is not the 
+			// selecting thread. As part of the registration we'll register
+			// an interest in connection events. These are raised when a channel
+			// is ready to complete connection establishment.
+			synchronized(this.pendingChanges) {
+				this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
+			}
+			selector.wakeup();
 		}catch(IOException ioe){
-
+			log.error("Ioexception while connecting", ioe);
 		}
-		// Queue a channel registration since the caller is not the 
-	    // selecting thread. As part of the registration we'll register
-	    // an interest in connection events. These are raised when a channel
-	    // is ready to complete connection establishment.
-	    synchronized(this.pendingChanges) {
-	      this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
-	    }
-	    selector.wakeup();
 	}
 
 	byte[] calculateChecksum(byte[] b){

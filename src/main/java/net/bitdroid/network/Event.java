@@ -34,7 +34,8 @@ public class Event {
 	private boolean propagate = true;
 	
 	public static enum EventType {
-		CONNECTION_ACCEPTED_TYPE,
+		INCOMING_CONNECTION_TYPE,
+		OUTGOING_CONNECTION_TYPE,
 		DISCONNECTED_TYPE,
 		VERSION_TYPE,
 		VERACK_TYPE,
@@ -132,5 +133,9 @@ public class Event {
 	 */
 	public void setPropagate(boolean propagate) {
 		this.propagate = propagate;
+	}
+	
+	public String toString(){
+		return "Event[" + getType() + "," + getSubject() + "]";
 	}
 }

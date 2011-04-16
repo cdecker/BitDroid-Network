@@ -42,10 +42,6 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
-
-	static final byte[] magic = new byte[]{(byte)0xf9,(byte)0xbe,(byte)0xb4,(byte)0xd9};
-	static final byte[] testnetMagic = new byte[]{(byte)0xFA,(byte)0xBF,(byte)0xB5,(byte)0xDA};
-	private boolean testnet = false;
 	protected InputStream inputStream;
 	protected OutputStream outputStream;
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
@@ -77,13 +73,6 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 		this.socket = socket;
 	}
 
-	public ThreadedBitcoinReactor(Socket socket, boolean testnet) throws IOException{
-		inputStream = socket.getInputStream();
-		outputStream = socket.getOutputStream();
-		this.socket = socket;
-		this.testnet = testnet;
-	}
-
 	public void addListener(BitcoinEventListener listener){
 		this.eventListeners.add(listener);
 	}
@@ -92,7 +81,7 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 		// Read magic
 		byte buf[] = new byte[4];
 		inputStream.read(buf);
-		if(!Arrays.equals(buf, magic))
+		if(!Arrays.equals(buf, ProtocolVersion.getMagic()))
 			throw new IOException("Stream is out of sync. Probably the other client is missbehaving?");
 		buf = new byte[12];
 		inputStream.read(buf);
@@ -184,7 +173,7 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 			listener.messageSent(event);
 		ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
 		event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
-		outputStream.write(magic);
+		outputStream.write(ProtocolVersion.getMagic());
 		// write the command
 		String command = event.getSubject().getCommand();
 		outputStream.write(command.getBytes());

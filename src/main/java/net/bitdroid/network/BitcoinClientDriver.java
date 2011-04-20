@@ -21,6 +21,7 @@ package net.bitdroid.network;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,19 +49,31 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 		this.network = network;
 	}
 
-	Map<Object, Integer> handshakeState = new HashMap<Object, Integer>(); 
+	Map<Object, ConnectionState> handshakeState = new HashMap<Object, ConnectionState>(); 
 
 	public void eventReceived(Event event) {
+		ConnectionState state = handshakeState.get(event.getOrigin());
+		if(state == null){
+			state = new ConnectionState();
+			handshakeState.put(event.getOrigin(), state);
+		}
 		if(event.getType() == EventType.OUTGOING_CONNECTION_TYPE){
 			try {
 				VersionMessage version = new VersionMessage();
 				PeerAddress p = new PeerAddress();
 				p.setAddress(InetAddress.getLocalHost());
-				p.setPort(8334);
+				p.setPort(8333);
+				p.setServices(1L);
 				version.setMyAddress(p);
+				SocketChannel sc = (SocketChannel)event.getOrigin();
+				p = new PeerAddress();
+				p.setAddress(sc.socket().getInetAddress());
+				p.setPort(8333);
+				p.setServices(1L);
 				version.setYourAddress(p);
 				version.setTimestamp(System.currentTimeMillis());
 				network.sendMessage(new Event(event.getOrigin(), version));
+				state.versionSent = true;
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -71,6 +84,8 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 		}else if(event.getType() == EventType.VERSION_TYPE){
 			// If we got the message out here in userland the protocol version is supported
 			// Create a verack and send it back
+
+			state.versionReceived = true;
 			VersionMessage hisVersion = (VersionMessage)event.getSubject();
 			VerackMessage verack = new VerackMessage();
 			VersionMessage version = new VersionMessage();
@@ -78,17 +93,23 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 			version.setYourAddress(hisVersion.getMyAddress());
 			version.setTimestamp(System.currentTimeMillis());
 			try {
-				network.sendMessage(new Event(event.getOrigin(), version));
 				network.sendMessage(new Event(event.getOrigin(), verack));
+				state.verackSent = true;
+				if(!state.versionSent){
+					network.sendMessage(new Event(event.getOrigin(), version));
+					state.versionSent = true;
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}else if(event.getType() == EventType.ADDR_TYPE){
+		}else if(event.getType() == EventType.VERACK_TYPE){
+			state.verackReceived = true;
+		}else if(event.getType() == EventType.INVENTORY_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
 				network.sendMessage(new Event(event.getOrigin(), new PingMessage()));
 			} catch (IOException e){
-log.error("Error sending ping", e);
+				log.error("Error sending ping", e);
 			}
 
 		}
@@ -96,4 +117,16 @@ log.error("Error sending ping", e);
 
 	public void messageSent(Event event) {}
 
+	/**
+	 * A simple class to store the current state of the connection.
+	 * 
+	 * @author cdecker
+	 *
+	 */
+	public class ConnectionState {
+		protected boolean versionReceived = false;
+		protected boolean verackReceived = false;
+		protected boolean versionSent = false;
+		protected boolean verackSent = false;
+	}
 }

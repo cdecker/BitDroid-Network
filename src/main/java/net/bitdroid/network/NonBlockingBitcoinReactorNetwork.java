@@ -75,6 +75,10 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	public NonBlockingBitcoinReactorNetwork(int port) throws IOException {
 		this.port = port;
+		this.init();
+	}
+
+	public void init() throws IOException{
 		log.debug("Starting non-blocking reactor");
 		log.info("Listening to {}:{}", hostAddress, port);
 		// Create a new selector
@@ -96,7 +100,6 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	protected Event readMessage(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		//InputStream inputStream = socketChannel.socket().getInputStream();
 		// Read magic
 		ByteBuffer buf = ByteBuffer.allocate(4);
 		socketChannel.read(buf);
@@ -123,8 +126,13 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		// This is mainly done to isolate the messages from each other and
 		// keep the data stream in sync.
 		final ByteBuffer bb = ByteBuffer.allocate(size);
-		socketChannel.read(bb);
-		bb.rewind();
+		if(size > 0){
+			int remainingSize = size;
+			while(remainingSize > 0){
+				remainingSize -= socketChannel.read(bb);
+			}
+			bb.rewind();
+		}
 		LittleEndianInputStream leis = LittleEndianInputStream.wrap(bb);
 
 		// Boilerplate to select the right message to initialize.
@@ -214,7 +222,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 						} catch (IOException e) {
 							// Cancel the channel's registration with our selector
 							key.cancel();
-							return;
+							continue;
 						}
 						//key.interestOps(SelectionKey.OP_READ); // By default register interest in reading, this will be overwritten by the below listeners
 						Event e = new Event();
@@ -233,7 +241,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 						write(key);
 					}
 				}
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
@@ -244,6 +252,8 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		try {
 			socketChannel.close();
 			socketChannel.keyFor(this.selector).cancel();
+			pendingMessages.remove(socketChannel);
+			socketStates.remove(socketChannel);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -278,7 +288,13 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 				socketChannel.write(ByteBuffer.wrap(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
 						(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
 				if(socketStates.get(socketChannel).currentState == SocketState.OPEN)
+					try{
 					socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
+					}catch(NoSuchAlgorithmException e){
+						log.error("Error initializing hashing algorithm", e);
+						this.disconnect(socketChannel);
+						return;
+					}
 
 				socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
 			}
@@ -336,9 +352,9 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 	}
 
 	public void connect(PeerAddress a){
-		SocketChannel socketChannel = null;
+		log.debug("Connecting to {}", a);
 		try{
-			socketChannel = SocketChannel.open();
+			SocketChannel socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
 			socketChannel.connect(new InetSocketAddress(a.getAddress(), a.getPort()));
 			// Queue a channel registration since the caller is not the 
@@ -350,23 +366,22 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 			}
 			selector.wakeup();
 		}catch(IOException ioe){
-			log.error("Ioexception while connecting", ioe);
+			log.error("IOException while connecting", ioe);
 		}
 	}
 
-	byte[] calculateChecksum(byte[] b){
+	private MessageDigest hasher; 
+
+	byte[] calculateChecksum(byte[] b) throws NoSuchAlgorithmException {
 		byte[] res = new byte[4];
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
-			md.reset();
-			byte[] o = md.digest(b);
-			md.reset();
-			o = md.digest(o);
-			for(int i=0; i<4; i++)
-				res[i] = o[i];
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
+		if(hasher == null)
+			hasher = MessageDigest.getInstance("SHA-256");
+		hasher.reset();
+		byte[] o = hasher.digest(b);
+		hasher.reset();
+		o = hasher.digest(o);
+		for(int i=0; i<4; i++)
+			res[i] = o[i];
 		return res;
 	}
 

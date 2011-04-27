@@ -98,83 +98,106 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	}
 
+	/**
+	 * A map of buffers for messages that are in flight, not yet completely read.
+	 */
+	protected Map<SocketChannel, IncompleteMessage> incompleteBuffer = new HashMap<SocketChannel, IncompleteMessage>();
+
 	protected Event readMessage(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		// Read magic
-		ByteBuffer buf = ByteBuffer.allocate(4);
-		socketChannel.read(buf);
-		if(!Arrays.equals(buf.array(), ProtocolVersion.getMagic()))
-			throw new IOException("Stream is out of sync. Probably the other client is missbehaving?");
-		buf = ByteBuffer.allocate(12);
-		socketChannel.read(buf);
-		String command = (new String(buf.array())).trim();
+		
+		// For the case of an incomplete read, we create an Incomplete message
+		// and then try to fill it. Should there already be an incomplete
+		// message we use that one
+		IncompleteMessage im = null;
+		if(incompleteBuffer.containsKey(socketChannel)){
+			im = incompleteBuffer.get(socketChannel);
+			incompleteBuffer.remove(socketChannel);
+		}else{
+			im = new IncompleteMessage();
 
-		// Poor mans read unsigned int :-)
-		buf = ByteBuffer.allocate(4);
-		socketChannel.read(buf);
-		byte b[] = buf.array();
-		int size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 | 
+			// Read magic
+			ByteBuffer buf = ByteBuffer.allocate(4);
+			socketChannel.read(buf);
+			if(!Arrays.equals(buf.array(), ProtocolVersion.getMagic()))
+				throw new IOException("Stream is out of sync. Probably the other client is missbehaving?");
+
+			// Read the command
+			buf = ByteBuffer.allocate(12);
+			socketChannel.read(buf);
+			im.command = (new String(buf.array())).trim();
+
+			// Poor mans read unsigned int :-)
+			buf = ByteBuffer.allocate(4);
+			socketChannel.read(buf);
+			byte b[] = buf.array();
+			im.size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 | 
 				(b[1] & 0xFF) << 8 | (b[0] & 0xFF));
 
-		if(socketStates.get(socketChannel).currentState != SocketState.HANDSHAKE){
-			ByteBuffer checksum = ByteBuffer.allocate(4);
-			socketChannel.read(checksum);
-			// TODO add switch to check the checksum.
-		}
-
-		// Now read the buffer and wrap it into a LittleEndianInputStream
-		// This is mainly done to isolate the messages from each other and
-		// keep the data stream in sync.
-		final ByteBuffer bb = ByteBuffer.allocate(size);
-		if(size > 0){
-			int remainingSize = size;
-			while(remainingSize > 0){
-				remainingSize -= socketChannel.read(bb);
+			if(socketStates.get(socketChannel).currentState != SocketState.HANDSHAKE){
+				im.checksum = ByteBuffer.allocate(4);
+				socketChannel.read(im.checksum);
+				// TODO add switch to check the checksum.
 			}
-			bb.rewind();
+			im.buffer = ByteBuffer.allocate(im.size);
 		}
-		LittleEndianInputStream leis = LittleEndianInputStream.wrap(bb);
+		
+		// Now attempt to fill the rest of the buffer, should we be unable to
+		// fill it completely push it back to the buffers
+		socketChannel.read(im.buffer);
 
-		// Boilerplate to select the right message to initialize.
-		Message message;
-		Event event = new Event();
-		event.setOrigin(socketChannel);
-		if("version".equalsIgnoreCase(command)){
-			message = new VersionMessage();
-
-		}else if("verack".equalsIgnoreCase(command)){
-			message = new VerackMessage();
-			// Just set the socket to require checksum flag
-			socketStates.get(socketChannel).currentState = SocketState.OPEN;
-
-		}else if("inv".equalsIgnoreCase(command)){
-			message = new InventoryMessage();
-
-		}else if("addr".equalsIgnoreCase(command)){
-			message = new AddrMessage();
-
-		}else if("tx".equalsIgnoreCase(command)){
-			message = new Transaction();
-
-		}else if("getdata".equalsIgnoreCase(command)){
-			message = new GetDataMessage();
-
-		}else if("getaddr".equalsIgnoreCase(command)){
-			message = new GetAddrMessage();
-
-		}else if("block".equalsIgnoreCase(command)){
-			message = new BlockMessage();
+		// If we haven't read everything, push it back in the buffer map
+		if(im.buffer.position() < im.buffer.capacity()){
+			incompleteBuffer.put(socketChannel, im);
+			return null;
 		}else{
-			message = new UnknownMessage();
-			((UnknownMessage)message).setCommand(command);
+			// We finished reading this message, prepare and process it:
+
+			// We wrap it into a LittleEndianInputStream
+			// This is mainly done to isolate the messages from each other and
+			// keep the data stream in sync.
+			im.buffer.rewind();
+			LittleEndianInputStream leis = LittleEndianInputStream.wrap(im.buffer);
+			// Boilerplate to select the right message to initialize.
+			Message message;
+			Event event = new Event();
+			event.setOrigin(socketChannel);
+			if("version".equalsIgnoreCase(im.command)){
+				message = new VersionMessage();
+
+			}else if("verack".equalsIgnoreCase(im.command)){
+				message = new VerackMessage();
+				// Just set the socket to require checksum flag
+				socketStates.get(socketChannel).currentState = SocketState.OPEN;
+
+			}else if("inv".equalsIgnoreCase(im.command)){
+				message = new InventoryMessage();
+
+			}else if("addr".equalsIgnoreCase(im.command)){
+				message = new AddrMessage();
+
+			}else if("tx".equalsIgnoreCase(im.command)){
+				message = new Transaction();
+
+			}else if("getdata".equalsIgnoreCase(im.command)){
+				message = new GetDataMessage();
+
+			}else if("getaddr".equalsIgnoreCase(im.command)){
+				message = new GetAddrMessage();
+
+			}else if("block".equalsIgnoreCase(im.command)){
+				message = new BlockMessage();
+			}else{
+				message = new UnknownMessage();
+				((UnknownMessage)message).setCommand(im.command);
+			}
+
+			message.setPayloadSize(im.size);
+			// And now each message knows how to read its format:
+			message.read(leis);
+			event.setSubject(message);
+			return event;
 		}
-
-		message.setPayloadSize(size);
-		// And now each message knows how to read its format:
-		message.read(leis);
-		event.setSubject(message);
-		return event;
-
 	}
 
 	/**
@@ -233,7 +256,9 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 						accept(key);
 					} else if (key.isReadable()) {
 						try{
-							publishReceivedEvent(readMessage(key));
+							Event m = readMessage(key);
+							if(m != null)
+								publishReceivedEvent(m);
 						}catch(IOException ioe){
 							disconnect((SocketChannel)key.channel());
 						}
@@ -248,12 +273,19 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	}
 
+	/**
+	 * Cleanly disconnect a socketChannel and clean out all the state maintained
+	 * along with it.
+	 * 
+	 * @param socketChannel
+	 */
 	protected void disconnect(SocketChannel socketChannel){
 		try {
 			socketChannel.close();
 			socketChannel.keyFor(this.selector).cancel();
 			pendingMessages.remove(socketChannel);
 			socketStates.remove(socketChannel);
+			incompleteBuffer.remove(socketChannel);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -405,5 +437,11 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		public final static int OPEN = 1;
 		public final static int SHUTDOWN = 2;
 		protected int currentState = SocketState.HANDSHAKE;
+	}
+	public class IncompleteMessage {
+		ByteBuffer buffer;
+		String command;
+		ByteBuffer checksum;
+		int size;
 	}
 }

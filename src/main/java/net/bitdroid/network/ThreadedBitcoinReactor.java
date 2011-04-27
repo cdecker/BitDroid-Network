@@ -41,6 +41,11 @@ import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
+/**
+ * @deprecated The threaded network is not supported, use {@link NonBlockingBitcoinReactorNetwork} instead.
+ * @author cdecker
+ *
+ */
 public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 	protected InputStream inputStream;
 	protected OutputStream outputStream;
@@ -51,6 +56,7 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 	public enum ClientState {
 		HANDSHAKE, OPEN, SHUTDOWN
 	};
+
 	protected ClientState currentState = ClientState.HANDSHAKE;
 
 	long getNonce() {
@@ -154,7 +160,9 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 				// React to the messages
 				// Dispatch to listeners
 				for(BitcoinEventListener listener : eventListeners)
-					listener.eventReceived(mess);
+					try{
+						listener.eventReceived(mess);
+					}catch(Throwable t){}
 			}
 		}catch(IOException ioe){
 			currentState = ClientState.SHUTDOWN;
@@ -170,7 +178,9 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 
 	public synchronized void sendMessage(Event event) throws IOException {
 		for(BitcoinEventListener listener : eventListeners)
-			listener.messageSent(event);
+			try{
+				listener.messageSent(event);
+			}catch(Throwable t){}
 		ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
 		event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
 		outputStream.write(ProtocolVersion.getMagic());

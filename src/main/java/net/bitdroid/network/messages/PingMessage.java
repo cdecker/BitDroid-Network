@@ -35,4 +35,13 @@ public class PingMessage extends EmptyMessage {
 	public String getCommand() {
 		return "ping";
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return "PingMessage";
+	}
 }

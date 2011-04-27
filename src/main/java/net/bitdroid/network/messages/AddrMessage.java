@@ -30,9 +30,11 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
  *
  */
 public class AddrMessage extends Message {
+
 	public EventType getType(){
 		return EventType.ADDR_TYPE;
 	}	
+
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
@@ -77,7 +79,7 @@ public class AddrMessage extends Message {
 			p.toWire(leos);
 		}
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -90,5 +92,4 @@ public class AddrMessage extends Message {
 		sb.append("]");
 		return sb.toString();
 	}
-
 }

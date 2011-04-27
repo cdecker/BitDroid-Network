@@ -21,17 +21,16 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Random;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.AddrMessage;
 import net.bitdroid.network.messages.GetAddrMessage;
 import net.bitdroid.network.messages.PeerAddress;
 import net.bitdroid.network.messages.VerackMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author cdecker
@@ -41,10 +40,15 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 	private Set<PeerAddress> addresses = new LinkedHashSet<PeerAddress>();
 	private Set<PeerAddress> connectedAddresses = new LinkedHashSet<PeerAddress>();
 	private int connected = 0;
-	private int maxConnected = 500;
+	private int maxConnected = 8;
 	private NonBlockingBitcoinReactorNetwork network;
 	private long lastAttempt = 0;
 	private Logger log = LoggerFactory.getLogger(PoolMaintainerListener.class);
+
+	public PoolMaintainerListener(NonBlockingBitcoinReactorNetwork network, int poolsize){
+		this.network = network;
+		this.maxConnected = poolsize;
+	}
 
 	public PoolMaintainerListener(NonBlockingBitcoinReactorNetwork network){
 		this.network = network;
@@ -89,7 +93,7 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 
 	private void connect() {
 		if(connected < maxConnected && !connectedAddresses.containsAll(addresses) && lastAttempt < System.currentTimeMillis() - 500){
-			log.info("Trying to open a new connection. Already connected to {}", connected);
+			log.debug("Trying to open a new connection. Already connected to {}", connected);
 			lastAttempt = System.currentTimeMillis();
 			// Attempt a new connection
 			Set<PeerAddress> unconnected = new HashSet<PeerAddress>();

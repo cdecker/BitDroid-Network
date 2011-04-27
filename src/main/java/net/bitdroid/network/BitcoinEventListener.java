@@ -24,6 +24,6 @@ package net.bitdroid.network;
  *
  */
 public interface BitcoinEventListener {
-	public void eventReceived(Event e);
-	public void messageSent(Event e);
+	public void eventReceived(Event e) throws Exception;
+	public void messageSent(Event e) throws Exception;
 }

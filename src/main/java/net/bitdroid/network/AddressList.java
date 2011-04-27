@@ -21,23 +21,25 @@ import java.util.Collection;
 import java.util.PriorityQueue;
 
 import net.bitdroid.network.messages.PeerAddress;
+
 /**
  * @author cdecker
  *
  */
 public class AddressList {
 	private PriorityQueue<PeerAddress> addresses = new PriorityQueue<PeerAddress>();
-	
+
 	/**
 	 * 
 	 */
 	public AddressList(int timeout) {
 		// TODO Auto-generated constructor stub
 	}
+
 	public void addAll(Collection<PeerAddress> addresses){
 		this.addresses.addAll(addresses);
 	}
-	
+
 	public void invalidate(PeerAddress a){
 		addresses.remove(a);
 	}

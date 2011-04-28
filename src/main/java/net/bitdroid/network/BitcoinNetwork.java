@@ -37,7 +37,7 @@ public abstract class BitcoinNetwork {
 	public void addListener(BitcoinEventListener listener){
 		this.eventListeners.add(listener);
 	}
-	
+
 	public void publishReceivedEvent(Event e){
 		log.debug("Publishing received message {}", e);
 		for(BitcoinEventListener listener : eventListeners)

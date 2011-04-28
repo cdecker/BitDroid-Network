@@ -34,7 +34,7 @@ public class InventoryMessage extends Message {
 	}
 
 	public static final int ERROR = 0, MSG_TX = 1, MSG_BLOCK = 2;
-	
+
 	private List<InventoryItem> items = new LinkedList<InventoryMessage.InventoryItem>();
 
 	@Override
@@ -60,7 +60,7 @@ public class InventoryMessage extends Message {
 			leos.write(b);
 		}
 	}
-	
+
 	public class InventoryItem {
 		private byte[] hash;
 		/**
@@ -80,7 +80,7 @@ public class InventoryMessage extends Message {
 			this.hash = hash;
 			this.type = type;
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see java.lang.Object#toString()
 		 */
@@ -100,7 +100,7 @@ public class InventoryMessage extends Message {
 			default:
 				break;
 			}
-			
+
 			try {
 				sb.append(",hash=").append(StringUtils.getHexString(hash));
 			} catch (UnsupportedEncodingException e) {}
@@ -126,7 +126,7 @@ public class InventoryMessage extends Message {
 	public List<InventoryItem> getItems() {
 		return items;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

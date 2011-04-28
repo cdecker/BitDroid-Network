@@ -32,7 +32,7 @@ public class Event {
 	 * Should this be false the reactor will stop notifying event listeners.
 	 */
 	private boolean propagate = true;
-	
+
 	public static enum EventType {
 		INCOMING_CONNECTION_TYPE,
 		OUTGOING_CONNECTION_TYPE,
@@ -48,39 +48,39 @@ public class Event {
 		TRANSACTION_TYPE,
 		UNKNOWN_TYPE,
 		PART_TYPE // Used to indicate that the message is not a standalone message.
-	};	
+	};
 
 	public Event(){}
 	public Event(Object o, Message m){
 		setOrigin(o);
 		setSubject(m);
 	}
-	
+
 	private EventType type;
 	private Message subject;
 	private Object origin;
-	
+
 	/**
 	 * @return the type
 	 */
 	public EventType getType() {
 		return type;
 	}
-	
+
 	/**
 	 * @param versionType the type to set
 	 */
 	public void setType(EventType versionType) {
 		this.type = versionType;
 	}
-	
+
 	/**
 	 * @return the subject
 	 */
 	public Message getSubject() {
 		return subject;
 	}
-	
+
 	/**
 	 * @param subject the subject to set
 	 */
@@ -88,53 +88,53 @@ public class Event {
 		this.subject = subject;
 		this.type = subject.getType();
 	}
-	
+
 	/**
 	 * An object identifying the origin of the event. This has to be meaningful
 	 * only to the reactor, which will use it to identify the targets to send
 	 * answers to.
-	 * 
+	 *
 	 * @return the origin
 	 */
 	public Object getOrigin() {
 		return origin;
 	}
-	
+
 	/**
 	 * @param origin the origin to set
 	 */
 	public void setOrigin(Object origin) {
 		this.origin = origin;
 	}
-	
+
 	/**
 	 * @return the handled
 	 */
 	public boolean isHandled() {
 		return handled;
 	}
-	
+
 	/**
 	 * @param handled the handled to set
 	 */
 	public void setHandled(boolean handled) {
 		this.handled = handled;
 	}
-	
+
 	/**
 	 * @return the propagate
 	 */
 	public boolean isPropagate() {
 		return propagate;
 	}
-	
+
 	/**
 	 * @param propagate the propagate to set
 	 */
 	public void setPropagate(boolean propagate) {
 		this.propagate = propagate;
 	}
-	
+
 	public String toString(){
 		return "Event[" + getType() + "," + getSubject() + "]";
 	}

@@ -70,7 +70,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	private int port;
 
 	private Selector selector;
-	private ServerSocketChannel serverChannel; 
+	private ServerSocketChannel serverChannel;
 	private Logger log = LoggerFactory.getLogger(BitcoinReactorNetwork.class);
 
 	// A list of PendingChange instances
@@ -99,7 +99,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		InetSocketAddress isa = new InetSocketAddress(this.hostAddress, this.port);
 		serverChannel.socket().bind(isa);
 
-		// Register the server socket channel, indicating an interest in 
+		// Register the server socket channel, indicating an interest in
 		// accepting new connections
 		serverChannel.register(selector, SelectionKey.OP_ACCEPT);
 
@@ -138,7 +138,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			buf = ByteBuffer.allocate(4);
 			socketChannel.read(buf);
 			byte b[] = buf.array();
-			im.size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 | 
+			im.size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 |
 					(b[1] & 0xFF) << 8 | (b[0] & 0xFF));
 
 			if(socketStates.get(socketChannel).currentState != SocketState.HANDSHAKE){
@@ -210,7 +210,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	/**
 	 * Process requested changes to the sockets and register new interests to
 	 * the selector keys.
-	 * 
+	 *
 	 * @throws ClosedChannelException
 	 */
 	private void processChanges() throws ClosedChannelException{
@@ -233,7 +233,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public void run() {
 		addListener(new BitcoinClientDriver(this));
@@ -256,7 +256,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 					// Check what event is available and deal with it
 					if (key.isConnectable()) {
 						try {
-							SocketChannel channel =(SocketChannel) key.channel(); 
+							SocketChannel channel =(SocketChannel) key.channel();
 							channel.finishConnect();
 							socketStates.put(channel, new SocketState());
 						} catch (IOException e) {
@@ -292,7 +292,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	/**
 	 * Execute tasks that are due now. It returns the time the selector is
 	 * allowed to sleep until the next task is due.
-	 * 
+	 *
 	 * @return milliseconds until the next scheduled task.
 	 */
 	protected long executeTasks(){
@@ -320,7 +320,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	/**
 	 * Cleanly disconnect a socketChannel and clean out all the state maintained
 	 * along with it.
-	 * 
+	 *
 	 * @param socketChannel
 	 */
 	protected void disconnect(SocketChannel socketChannel){
@@ -349,7 +349,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
 				//OutputStream outputStream = socketChannel.socket().getOutputStream();
-				Event event = queue.poll(); 
+				Event event = queue.poll();
 				publishSentEvent(event);
 				ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
 				event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
@@ -382,7 +382,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 				key.interestOps(SelectionKey.OP_READ);
 			}
 		}
-	} 
+	}
 	private void accept(SelectionKey key) throws IOException {
 		// For an accept to be pending the channel must be a server socket channel.
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
@@ -433,7 +433,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			SocketChannel socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
 			socketChannel.connect(new InetSocketAddress(a.getAddress(), a.getPort()));
-			// Queue a channel registration since the caller is not the 
+			// Queue a channel registration since the caller is not the
 			// selecting thread. As part of the registration we'll register
 			// an interest in connection events. These are raised when a channel
 			// is ready to complete connection establishment.
@@ -446,7 +446,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		}
 	}
 
-	private MessageDigest hasher; 
+	private MessageDigest hasher;
 
 	byte[] calculateChecksum(byte[] b) throws NoSuchAlgorithmException {
 		byte[] res = new byte[4];

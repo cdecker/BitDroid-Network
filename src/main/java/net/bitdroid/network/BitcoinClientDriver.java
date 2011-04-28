@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Default driver that automatically responds to certain messages to keep the
  * connection alive.
- * 
+ *
  * @author cdecker
  *
  */
@@ -49,7 +49,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 		this.network = network;
 	}
 
-	Map<Object, ConnectionState> handshakeState = new HashMap<Object, ConnectionState>(); 
+	Map<Object, ConnectionState> handshakeState = new HashMap<Object, ConnectionState>();
 
 	public void eventReceived(Event event) {
 		ConnectionState state = handshakeState.get(event.getOrigin());
@@ -119,7 +119,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 
 	/**
 	 * A simple class to store the current state of the connection.
-	 * 
+	 *
 	 * @author cdecker
 	 *
 	 */

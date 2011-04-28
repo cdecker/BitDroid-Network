@@ -26,8 +26,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 /**
- * A little endian output stream writes primitive Java numbers 
- * and characters to an output stream in a little endian format. 
+ * A little endian output stream writes primitive Java numbers
+ * and characters to an output stream in a little endian format.
  * The standard java.io.DataOutputStream class which this class
  * imitates uses big-endian integers.
  *
@@ -37,13 +37,13 @@ import java.nio.ByteBuffer;
 public class LittleEndianOutputStream extends FilterOutputStream {
 
 	/**
-	 * The number of bytes written so far to the little endian output stream. 
+	 * The number of bytes written so far to the little endian output stream.
 	 */
 	protected int written;
 
 	/**
-	 * Creates a new little endian output stream and chains it to the  
-	 * output stream specified by the out argument. 
+	 * Creates a new little endian output stream and chains it to the
+	 * output stream specified by the out argument.
 	 *
 	 * @param   out   the underlying output stream.
 	 * @see     java.io.FilterOutputStream#out
@@ -53,7 +53,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes the specified byte value to the underlying output stream. 
+	 * Writes the specified byte value to the underlying output stream.
 	 *
 	 * @param      b   the <code>byte</code> value to be written.
 	 * @exception  IOException  if the underlying stream throws an IOException.
@@ -64,7 +64,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes <code>length</code> bytes from the specified byte array 
+	 * Writes <code>length</code> bytes from the specified byte array
 	 * starting at <code>offset</code> to the underlying output stream.
 	 *
 	 * @param      data     the data.
@@ -72,7 +72,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	 * @param      length   the number of bytes to write.
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
-	public synchronized void write(byte[] data, int offset, int length) 
+	public synchronized void write(byte[] data, int offset, int length)
 	throws IOException {
 		out.write(data, offset, length);
 		written += length;
@@ -84,7 +84,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 		b[0] = (byte)(s & 0xFF);
 		write(b);
 	}
-	
+
 	public void writeUnsignedLong(BigInteger i) throws IOException{
 		// Dirty little trick, let's just hope the last bit is never set...
 		writeLong(i.longValue());
@@ -92,7 +92,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 		//reverse(b);
 		//write(b);
 	}
-	
+
 	public void writeUnsignedInt(long v) throws IOException {
 		byte[] b = new byte[]{(byte)(v & 0xFF),(byte)(v >> 8 & 0xFF),
 				(byte)(v >> 16 & 0xFF), (byte)(v >> 24 & 0xFF)};
@@ -100,7 +100,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes a <code>boolean</code> to the underlying output stream as 
+	 * Writes a <code>boolean</code> to the underlying output stream as
 	 * a single byte. If the argument is true, the byte value 1 is written.
 	 * If the argument is false, the byte value <code>0</code> in written.
 	 *
@@ -127,7 +127,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 
 	/**
 	 * Writes a two byte <code>short</code> to the underlying output stream in
-	 * little endian order, low byte first. 
+	 * little endian order, low byte first.
 	 *
 	 * @param      s   the <code>short</code> to be written.
 	 * @exception  IOException  if the underlying stream throws an IOException.
@@ -141,8 +141,8 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes a two byte <code>char</code> to the underlying output stream 
-	 * in little endian order, low byte first. 
+	 * Writes a two byte <code>char</code> to the underlying output stream
+	 * in little endian order, low byte first.
 	 *
 	 * @param      c   the <code>char</code> value to be written.
 	 * @exception  IOException  if the underlying stream throws an IOException.
@@ -156,7 +156,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes a four-byte <code>int</code> to the underlying output stream 
+	 * Writes a four-byte <code>int</code> to the underlying output stream
 	 * in little endian order, low byte first, high byte last
 	 *
 	 * @param      i   the <code>int</code> to be written.
@@ -173,7 +173,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes an eight-byte <code>long</code> to the underlying output stream 
+	 * Writes an eight-byte <code>long</code> to the underlying output stream
 	 * in little endian order, low byte first, high byte last
 	 *
 	 * @param      l   the <code>long</code> to be written.
@@ -220,17 +220,17 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 	}
 
 	/**
-	 * Writes a string of no more than 65,535 characters 
-	 * to the underlying output stream using UTF-8 
-	 * encoding. This method first writes a two byte short 
-	 * in <b>big</b> endian order as required by the 
-	 * UTF-8 specification. This gives the number of bytes in the 
+	 * Writes a string of no more than 65,535 characters
+	 * to the underlying output stream using UTF-8
+	 * encoding. This method first writes a two byte short
+	 * in <b>big</b> endian order as required by the
+	 * UTF-8 specification. This gives the number of bytes in the
 	 * UTF-8 encoded version of the string, not the number of characters
 	 * in the string. Next each character of the string is written
 	 * using the UTF-8 encoding for the character.
 	 *
 	 * @param      s   the string to be written.
-	 * @exception  UTFDataFormatException if the string is longer than 
+	 * @exception  UTFDataFormatException if the string is longer than
 	 *             65,535 characters.
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -246,7 +246,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 //			else numbytes += 2;
 //		}
 //
-//		if (numbytes > 65535) throw new UTFDataFormatException();     
+//		if (numbytes > 65535) throw new UTFDataFormatException();
 //
 //		out.write((numbytes >>> 8) & 0xFF);
 //		out.write(numbytes & 0xFF);
@@ -260,7 +260,7 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 //				out.write(0x80 | ((c >>  6) & 0x3F));
 //				out.write(0x80 | (c & 0x3F));
 //				written += 2;
-//			} 
+//			}
 //			else {
 //				out.write(0xC0 | ((c >>  6) & 0x1F));
 //				out.write(0x80 | (c & 0x3F));
@@ -283,12 +283,12 @@ public class LittleEndianOutputStream extends FilterOutputStream {
 			writeUnsignedInt(size);
 		}
 	}
-	
+
 	public void writeString(String s) throws IOException {
 		writeVariableSize(s.length());
 		out.write(s.getBytes());
 	}
-	
+
 	public static LittleEndianOutputStream wrap(final byte[] b){
 		return wrap(ByteBuffer.wrap(b));
 	}

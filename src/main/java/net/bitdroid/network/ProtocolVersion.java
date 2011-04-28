@@ -24,32 +24,32 @@ package net.bitdroid.network;
 public class ProtocolVersion {
 	private static boolean testnet = false;
 	public static String cryptoProvider = "BC";
-	public static final int VERSION = 31700; 
+	public static final int VERSION = 31700;
 	public static final String CLIENT_NAME = "BitDroid 0.1";
 
 	public static boolean isTestnet(){
 		return testnet;
 	}
-	
+
 	public static void setTestnet(boolean _testnet){
 		testnet = _testnet;
 	}
-	
+
 	private static byte[] testnetMagic = new byte[]{(byte) 0xFA,(byte) 0xBF,(byte) 0xB5,(byte) 0xDA};
 	private static byte[] productionMagic = new byte[]{(byte) 0xF9,(byte) 0xBe,(byte) 0xB4,(byte) 0xD9};
-	
+
 	/**
 	 * Returns the magic bytes (header bytes) for the current protocol version.
-	 * 
+	 *
 	 * @return 4 magic byte
 	 */
 	public static byte[] getMagic(){
 		return testnet?testnetMagic:productionMagic;
 	}
-	
+
 	/**
 	 * Returns the version byte of addresses for this protocol version.
-	 * 
+	 *
 	 * @return version byte
 	 */
 	public static byte getAddressVersion(){

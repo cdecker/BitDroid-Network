@@ -33,7 +33,7 @@ public class AddrMessage extends Message {
 
 	public EventType getType(){
 		return EventType.ADDR_TYPE;
-	}	
+	}
 
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
@@ -60,7 +60,7 @@ public class AddrMessage extends Message {
 		// Read the variable length:
 		long count = in.readVariableSize();
 		for(long i=0; i<count; i++){
-			int timestamp = in.readInt(); 
+			int timestamp = in.readInt();
 			PeerAddress peer = new PeerAddress();
 			peer.setLastSeen(timestamp);
 			peer.read(in);

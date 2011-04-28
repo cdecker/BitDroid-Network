@@ -35,7 +35,7 @@ public class UnknownMessage extends Message {
 
 	private byte[] content;
 	private String command;
-	
+
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#getCommand()
 	 */
@@ -43,11 +43,11 @@ public class UnknownMessage extends Message {
 	public String getCommand() {
 		return command;
 	}
-	
+
 	public void setCommand(String command){
 		this.command = command;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
@@ -64,7 +64,7 @@ public class UnknownMessage extends Message {
 	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		throw new RuntimeException("Why would I ever try to send a message I don't know the meaning of?");
 	}
-	
+
 	public String toString(){
 		return "UnknownMessage[" + getCommand() + "]";
 	}

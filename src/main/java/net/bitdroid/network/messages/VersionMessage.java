@@ -33,7 +33,7 @@ public class VersionMessage extends Message {
 	}
 
 	private long timestamp;
-	
+
 	public long getTimestamp() {
 		return timestamp;
 	}
@@ -43,15 +43,15 @@ public class VersionMessage extends Message {
 	}
 
 	private long protocolVersion = BitcoinReactorNetwork.PROTOCOL_VERSION;
-	
-	// Default services for this client 
+
+	// Default services for this client
 	private byte[] localServices = new byte[]{1,0,0,0,0,0,0,0};
 	private PeerAddress myAddress, yourAddress;
 	private long nonce;
 	private String clientVersion = ProtocolVersion.CLIENT_NAME;
 	private long height;
-	
-	
+
+
 	/**
 	 * @return the height
 	 */
@@ -157,7 +157,7 @@ public class VersionMessage extends Message {
 	public String getCommand() {
 		return "version";
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

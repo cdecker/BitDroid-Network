@@ -52,7 +52,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readUnsignedShort()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testReadUnsignedShort() throws IOException {
@@ -63,7 +63,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readUnsignedInt()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testReadUnsignedInt() throws IOException {
@@ -74,14 +74,14 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readUnsignedLong()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testReadUnsignedLong() throws IOException {
 		BigInteger c = new BigInteger("1311768467463790320");
 		byte b[] = c.toByteArray();
 		StringUtils.reverse(b);
-		BigInteger r = LittleEndianInputStream.wrap(b).readUnsignedLong(); 
+		BigInteger r = LittleEndianInputStream.wrap(b).readUnsignedLong();
 		assertEquals(c, r);
 	}
 
@@ -111,7 +111,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readShort()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testReadShort() throws IOException {
@@ -127,7 +127,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readChar()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	//	@Test
 	//	public void testReadChar() throws IOException {
@@ -136,7 +136,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readInt()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 		@Test
 		public void testReadInt() throws IOException {
@@ -152,7 +152,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#readLong()}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testReadLong() throws IOException {
@@ -198,7 +198,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#skipBytes(int)}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testSkipBytes() throws IOException {
@@ -212,7 +212,7 @@ public class TestLittleEndianInputStream {
 
 	/**
 	 * Test method for {@link net.bitdroid.network.wire.LittleEndianInputStream#wrap(byte[])}.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	@Test
 	public void testWrap() throws IOException {

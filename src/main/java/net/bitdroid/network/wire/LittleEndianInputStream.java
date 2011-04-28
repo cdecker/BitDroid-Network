@@ -28,8 +28,8 @@ import java.nio.ByteBuffer;
 public class LittleEndianInputStream extends FilterInputStream {
 
 	/**
-	 * Creates a new little endian input stream and chains it to the  
-	 * input stream specified by the in argument. 
+	 * Creates a new little endian input stream and chains it to the
+	 * input stream specified by the in argument.
 	 *
 	 * @param   in   the underlying input stream.
 	 * @see     java.io.FilterInputStream#out
@@ -41,7 +41,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	public int readUnsignedShort() throws IOException{
 		byte b[] = new byte[2];
 		read(b);
-		return (b[1] & 0xFF) << 8 | (b[0] & 0xFF);  
+		return (b[1] & 0xFF) << 8 | (b[0] & 0xFF);
 	}
 
 	public long readUnsignedInt() throws IOException {
@@ -83,8 +83,8 @@ public class LittleEndianInputStream extends FilterInputStream {
 	private final static void reverse(byte[] b) {
 		int left  = 0, right = b.length-1;
 		while (left < right) {
-			byte temp = b[left]; 
-			b[left]  = b[right]; 
+			byte temp = b[left];
+			b[left]  = b[right];
 			b[right] = temp;
 			left++;
 			right--;
@@ -93,9 +93,9 @@ public class LittleEndianInputStream extends FilterInputStream {
 	// ========================================================================
 
 	/**
-	 * Reads a <code>boolean</code> from the underlying input stream by 
+	 * Reads a <code>boolean</code> from the underlying input stream by
 	 * reading a single byte. If the byte is zero, false is returned.
-	 * If the byte is positive, true is returned. 
+	 * If the byte is positive, true is returned.
 	 *
 	 * @return      b   the <code>boolean</code> value read.
 	 * @exception  EOFException  if the end of the underlying input stream
@@ -125,11 +125,11 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Reads an unsigned <code>byte</code> from the underlying 
+	 * Reads an unsigned <code>byte</code> from the underlying
 	 * input stream with value between 0 and 255
 	 *
 	 * @return     the <code>byte</code> value read.
-	 * @exception  EOFException  if the end of the underlying input 
+	 * @exception  EOFException  if the end of the underlying input
 	 *              stream has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -138,11 +138,11 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Reads a two byte signed <code>short</code> from the underlying 
-	 * input stream in little endian order, low byte first. 
+	 * Reads a two byte signed <code>short</code> from the underlying
+	 * input stream in little endian order, low byte first.
 	 *
 	 * @return     the <code>short</code> read.
-	 * @exception  EOFException  if the end of the underlying input stream 
+	 * @exception  EOFException  if the end of the underlying input stream
 	 *              has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -155,15 +155,15 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Reads a two byte unsigned <code>short</code> from the underlying 
-	 * input stream in little endian order, low byte first. 
+	 * Reads a two byte unsigned <code>short</code> from the underlying
+	 * input stream in little endian order, low byte first.
 	 *
 	 * @return     the int value of the unsigned short read.
-	 * @exception  EOFException  if the end of the underlying input stream 
+	 * @exception  EOFException  if the end of the underlying input stream
 	 *              has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
-	/*  
+	/*
   public int readUnsignedShort() throws IOException {
 
     int byte1 = in.read();
@@ -174,11 +174,11 @@ public class LittleEndianInputStream extends FilterInputStream {
   }
 	 */
 	/**
-	 * Reads a two byte Unicode <code>char</code> from the underlying 
-	 * input stream in little endian order, low byte first. 
+	 * Reads a two byte Unicode <code>char</code> from the underlying
+	 * input stream in little endian order, low byte first.
 	 *
 	 * @return     the int value of the unsigned short read.
-	 * @exception  EOFException  if the end of the underlying input stream 
+	 * @exception  EOFException  if the end of the underlying input stream
 	 *              has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -191,11 +191,11 @@ public class LittleEndianInputStream extends FilterInputStream {
 
 
 	/**
-	 * Reads a four byte signed <code>int</code> from the underlying 
-	 * input stream in little endian order, low byte first. 
+	 * Reads a four byte signed <code>int</code> from the underlying
+	 * input stream in little endian order, low byte first.
 	 *
 	 * @return     the <code>int</code> read.
-	 * @exception  EOFException  if the end of the underlying input stream 
+	 * @exception  EOFException  if the end of the underlying input stream
 	 *              has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -209,19 +209,19 @@ public class LittleEndianInputStream extends FilterInputStream {
 			byte3 = in.read();
 			byte4 = in.read();
 		}
-		return (byte4 << 24) 
-		+ ((byte3 << 24) >>> 8) 
-		+ ((byte2 << 24) >>> 16) 
+		return (byte4 << 24)
+		+ ((byte3 << 24) >>> 8)
+		+ ((byte2 << 24) >>> 16)
 		+ ((byte1 << 24) >>> 24);
 
 	}
 
 	/**
-	 * Reads an eight byte signed <code>int</code> from the underlying 
-	 * input stream in little endian order, low byte first. 
+	 * Reads an eight byte signed <code>int</code> from the underlying
+	 * input stream in little endian order, low byte first.
 	 *
 	 * @return     the <code>int</code> read.
-	 * @exception  EOFException  if the end of the underlying input stream 
+	 * @exception  EOFException  if the end of the underlying input stream
 	 *              has been reached
 	 * @exception  IOException  if the underlying stream throws an IOException.
 	 */
@@ -234,25 +234,25 @@ public class LittleEndianInputStream extends FilterInputStream {
 		long byte6 = in.read();
 		long byte7 = in.read();
 		long byte8 = in.read();
-		return (byte8 << 56) 
-		+ ((byte7 << 56) >>> 8) 
-		+ ((byte6 << 56) >>> 16) 
-		+ ((byte5 << 56) >>> 24) 
-		+ ((byte4 << 56) >>> 32) 
-		+ ((byte3 << 56) >>> 40) 
-		+ ((byte2 << 56) >>> 48) 
+		return (byte8 << 56)
+		+ ((byte7 << 56) >>> 8)
+		+ ((byte6 << 56) >>> 16)
+		+ ((byte5 << 56) >>> 24)
+		+ ((byte4 << 56) >>> 32)
+		+ ((byte3 << 56) >>> 40)
+		+ ((byte2 << 56) >>> 48)
 		+ ((byte1 << 56) >>> 56);
 	}
 
 	/**
-	 * Reads a string of no more than 65,535 characters 
-	 * from the underlying input stream using UTF-8 
-	 * encoding. This method first reads a two byte short 
-	 * in <b>big</b> endian order as required by the 
-	 * UTF-8 specification. This gives the number of bytes in 
+	 * Reads a string of no more than 65,535 characters
+	 * from the underlying input stream using UTF-8
+	 * encoding. This method first reads a two byte short
+	 * in <b>big</b> endian order as required by the
+	 * UTF-8 specification. This gives the number of bytes in
 	 * the UTF-8 encoded version of the string.
 	 * Next this many bytes are read and decoded as UTF-8
-	 * encoded characters. 
+	 * encoded characters.
 	 *
 	 * @return     the decoded string
 	 * @exception  UTFDataFormatException if the string cannot be decoded
@@ -263,7 +263,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	//		int byte1 = in.read();
 	//		int byte2 = in.read();
 	//		if (byte2 == -1) throw new EOFException();
-	//		int numbytes = (byte1 << 8) + byte2;    
+	//		int numbytes = (byte1 << 8) + byte2;
 	//		char result[] = new char[numbytes];
 	//		int numread = 0;
 	//		int numchars = 0;
@@ -281,29 +281,29 @@ public class LittleEndianInputStream extends FilterInputStream {
 	//		}
 	//		else if (test == 12 || test == 13) { // two bytes
 	//			numread += 2;
-	//			if (numread > numbytes) throw new UTFDataFormatException(); 
+	//			if (numread > numbytes) throw new UTFDataFormatException();
 	//			c2 = readUnsignedByte();
-	//			if ((c2 & 0xC0) != 0x80) throw new UTFDataFormatException();     
+	//			if ((c2 & 0xC0) != 0x80) throw new UTFDataFormatException();
 	//			result[numchars++] = (char) (((c1 & 0x1F) << 6) | (c2 & 0x3F));
 	//		}
 	//		else if (test == 14) { // three bytes
 	//			numread += 3;
-	//			if (numread > numbytes) throw new UTFDataFormatException();    
+	//			if (numread > numbytes) throw new UTFDataFormatException();
 	//			c2 = readUnsignedByte();
 	//			c3 = readUnsignedByte();
 	//			if (((c2 & 0xC0) != 0x80) || ((c3 & 0xC0) != 0x80)) {
 	//				throw new UTFDataFormatException();
 	//			}
-	//			result[numchars++] = (char) 
+	//			result[numchars++] = (char)
 	//			(((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F));
 	//		}
 	//		else { // malformed
 	//			throw new UTFDataFormatException();
-	//		}    
+	//		}
 	//
 	//		}  // end while
 	//
-	//		return new String(result, 0, numchars); 
+	//		return new String(result, 0, numchars);
 	//
 	//	}
 
@@ -311,7 +311,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 *
 	 * @return     the next eight bytes of this input stream, interpreted as a
 	 *             little endian <code>double</code>.
-	 * @exception  EOFException if end of stream occurs before eight bytes 
+	 * @exception  EOFException if end of stream occurs before eight bytes
 	 *             have been read.
 	 * @exception  IOException   if an I/O error occurs.
 	 */
@@ -323,7 +323,7 @@ public class LittleEndianInputStream extends FilterInputStream {
 	 *
 	 * @return     the next four bytes of this input stream, interpreted as a
 	 *             little endian <code>int</code>.
-	 * @exception  EOFException if end of stream occurs before four bytes 
+	 * @exception  EOFException if end of stream occurs before four bytes
 	 *             have been read.
 	 * @exception  IOException  if an I/O error occurs.
 	 */
@@ -332,9 +332,9 @@ public class LittleEndianInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Skip exactly <code>n</code> bytes of input in the underlying 
-	 * input stream. This method blocks until all the bytes are skipped, 
-	 * the end of the stream is detected, or an exception is thrown. 
+	 * Skip exactly <code>n</code> bytes of input in the underlying
+	 * input stream. This method blocks until all the bytes are skipped,
+	 * the end of the stream is detected, or an exception is thrown.
 	 *
 	 * @param      n   the number of bytes to skip.
 	 * @return     the number of bytes skipped, generally n
@@ -364,13 +364,13 @@ public class LittleEndianInputStream extends FilterInputStream {
 				}
 				return bb.get();
 			}
-			
+
 			public synchronized int read(byte[] bytes, int off, int len) throws IOException {
 				// Read only what's left
 				len = Math.min(len, bb.remaining());
 				bb.get(bytes, off, len); return len;
 			}
-			
+
 			/* (non-Javadoc)
 			 * @see java.io.InputStream#available()
 			 */

@@ -96,7 +96,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		// Poor mans read unsigned int :-)
 		buf = new byte[4];
 		inputStream.read(buf);
-		int size = (int)((buf[3] & 0xFF) << 24 | (buf[2] & 0xFF) << 16 | 
+		int size = (int)((buf[3] & 0xFF) << 24 | (buf[2] & 0xFF) << 16 |
 				(buf[1] & 0xFF) << 8 | (buf[0] & 0xFF));
 
 		if(currentState != ClientState.HANDSHAKE){
@@ -132,7 +132,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 
 		}else if("tx".equalsIgnoreCase(command)){
 			message = new Transaction();
-			
+
 		}else if("getdata".equalsIgnoreCase(command)){
 			message = new GetDataMessage();
 		}else if("block".equalsIgnoreCase(command)){

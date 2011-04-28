@@ -29,7 +29,7 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	public EventType getType(){
 		return EventType.PART_TYPE;
 	}
-	
+
 	private long services;
 	private byte reserved[] = new byte[8];
 	private int lastSeen = 0;

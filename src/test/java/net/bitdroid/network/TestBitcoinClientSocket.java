@@ -45,25 +45,25 @@ import org.slf4j.LoggerFactory;
 public class TestBitcoinClientSocket extends TestCase {
 
 	Logger LOG = LoggerFactory.getLogger(TestBitcoinClientSocket.class);
-	
+
 	protected ThreadedBitcoinNetwork prepareWithDump(String filename) throws IOException{
 		ThreadedBitcoinNetwork s = new ThreadedBitcoinNetwork();
 		s.inputStream = ClassLoader.getSystemResourceAsStream(filename);
 		return s;
 	}
-	
+
 	protected byte[] readDump(String filename, int length) throws IOException{
 		byte[] buffer = new byte[length];
 		ClassLoader.getSystemResourceAsStream(filename).read(buffer);
 		return buffer;
 	}
-	
+
 	@Test
 	public void testReadDump() throws IOException{
 		InputStream is = ClassLoader.getSystemResourceAsStream("bitcoin-version-0.dump");
 		is.read();
 	}
-	
+
 	@Test
 	public void testReadVerackMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-verack-1.dump");
@@ -73,7 +73,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(m.getPayloadSize(), 0);
 		assertTrue("Checksum is set on the socket", s.currentState == ClientState.OPEN);
 	}
-	
+
 	@Test
 	public void testReadVersionMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-version-1.dump");
@@ -88,7 +88,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals("", m.getClientVersion());
 		assertEquals(98806, m.getHeight());
 	}
-	
+
 	@Test
 	public void testFullVersionMessageCycle() throws IOException {
 		// Read the original
@@ -100,7 +100,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		s.sendMessage(new Event(null, m));
 		assert(Arrays.equals(buf, output));
 	}
-	
+
 	@Test
 	public void testReadAddress() throws IOException {
 		LittleEndianInputStream leis = new LittleEndianInputStream(ClassLoader.getSystemResourceAsStream("address.dump"));
@@ -110,7 +110,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(1, a.getServices());
 		assertEquals(36747, a.getPort());
 	}
-	
+
 	@Test
 	public void testWriteAddress() throws IOException {
 		PeerAddress a = new PeerAddress();
@@ -129,7 +129,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		LOG.info(StringUtils.getHexString(c));
 		assertTrue(Arrays.equals(c, b));
 	}
-	
+
 	@Test
 	public void testReadInvMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-inv-2.dump");
@@ -137,7 +137,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		InventoryMessage m = (InventoryMessage)s.readMessage().getSubject();
 		assertEquals(8, m.getItems().size());
 	}
-	
+
 	@Test
 	public void testChecksum() throws IOException{
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-inv-2.dump");
@@ -153,7 +153,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		for(int i=0; i<calc.length; i++)
 			assertEquals(checksum[i], calc[i]);
 	}
-	
+
 	/*
 	 * Tests against transaction http://blockexplorer.com/t/94QA14eKWN
      */
@@ -169,7 +169,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals("2936ee6a0db4e4901988503bb6e966128dd5fa01bcf08451f78a1d5b08dbbd6d", StringUtils.getHexString(b));
 		assertEquals(2, m.getOutputs().size());
 	}
-	
+
 	@Test
 	public void testReadBlockMessage() throws IOException{
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-block-3.dump");
@@ -177,13 +177,13 @@ public class TestBitcoinClientSocket extends TestCase {
 		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		assertEquals(1, m.getVersion());
 
-		// The dump is of block 96180, previous hash points to 96179, 
+		// The dump is of block 96180, previous hash points to 96179,
 		assertEquals("0000000000018998eb165333c20db25a170c2e3a468ea05a3ad672c8b678fdc2",StringUtils.getHexString(m.getPreviousHash()));
 		assertEquals("ae7741a7e6cd43917e49f081dbe222106f30042687b9cc0de2d24af0950f43da",StringUtils.getHexString(m.getMerkleRoot()));
 		// Nonce is in hexadecimal (1652850737 = 0x62848031)
 		assertEquals("62848031", StringUtils.getHexString(m.getNonce()));
 	}
-	
+
 	@Test
 	public void testReadWriteBlockMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-block-3.dump");
@@ -207,7 +207,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		s.sendMessage(new Event(null, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
-	
+
 	@Test
 	public void testReadWriteAddrMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-addr-11.dump");
@@ -243,9 +243,9 @@ public class TestBitcoinClientSocket extends TestCase {
 		s.sendMessage(new Event(null, m));
 		assertEquals(buf, output);
 	}
-	
+
 	/**
-	 * Simpler helper 
+	 * Simpler helper
 	 * @param expected
 	 * @param actual
 	 * @throws IOException

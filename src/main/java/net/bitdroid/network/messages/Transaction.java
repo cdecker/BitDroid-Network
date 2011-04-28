@@ -54,7 +54,7 @@ public class Transaction extends Message {
 	@Override
 	public void read(LittleEndianInputStream in) throws IOException {
 		version = in.readInt();
-		
+
 		// Read inputs
 		long inputCount = in.readVariableSize();
 		for(int i=0; i<inputCount; i++){
@@ -72,7 +72,7 @@ public class Transaction extends Message {
 			txIn.setSequence(in.readUnsignedInt());
 			inputs.add(txIn);
 		}
-		
+
 		long outputCount = in.readVariableSize();
 		for(int i=0; i<outputCount; i++){
 			TxOutput txOut = new TxOutput();
@@ -92,7 +92,7 @@ public class Transaction extends Message {
 	@Override
 	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		leos.writeInt(version);
-		
+
 		// Write inputs
 		leos.writeVariableSize(inputs.size());
 		for(TxInput txIn : inputs){
@@ -102,7 +102,7 @@ public class Transaction extends Message {
 			leos.write(txIn.getSignature());
 			leos.writeUnsignedInt(txIn.getSequence());
 		}
-		
+
 		leos.writeVariableSize(outputs.size());
 		for(TxOutput o : outputs){
 			leos.writeUnsignedLong(o.getValue());
@@ -140,7 +140,7 @@ public class Transaction extends Message {
 			this.script = script2;
 		}
 	}
-	
+
 	public class TxInput {
 		private TxOutputPoint previous;
 		private byte[] signature;
@@ -182,7 +182,7 @@ public class Transaction extends Message {
 			this.sequence = sequence;
 		}
 	}
-	
+
 	/**
 	 * Reference to a previous output point. Mainly used to show where the
 	 * coins came from in the first place and claim ownership.

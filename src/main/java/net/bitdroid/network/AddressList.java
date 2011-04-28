@@ -30,7 +30,7 @@ public class AddressList {
 	private PriorityQueue<PeerAddress> addresses = new PriorityQueue<PeerAddress>();
 
 	/**
-	 * 
+	 *
 	 */
 	public AddressList(int timeout) {
 		// TODO Auto-generated constructor stub

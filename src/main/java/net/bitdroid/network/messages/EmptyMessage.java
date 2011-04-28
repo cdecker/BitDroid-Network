@@ -26,26 +26,26 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
  * This class simply adds empty implementations of the read and toWire methods.
  * Mainly to refrain from having to state it all over again in the various
  * classes.
- * 
+ *
  * @author cdecker
- * 
+ *
  */
 public abstract class EmptyMessage extends Message{
-	
+
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.messages.Message#read(net.bitdroid.network.wire.LittleEndianInputStream)
 	 */
 	@Override
 	public void read(LittleEndianInputStream in) throws IOException {
-		// It's empty, nothing to do here	
+		// It's empty, nothing to do here
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.messages.Message#toWire(net.bitdroid.network.wire.LittleEndianOutputStream)
 	 */
 	@Override
 	public void toWire(LittleEndianOutputStream leos) throws IOException {
-		// Nothing here either :-)	
+		// Nothing here either :-)
 	}
-	
+
 }

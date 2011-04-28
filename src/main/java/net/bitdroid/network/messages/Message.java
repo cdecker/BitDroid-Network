@@ -26,7 +26,7 @@ import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 public abstract class Message {
 	public abstract EventType getType();
-	
+
 	/**
 	 * @return the command
 	 */
@@ -36,11 +36,11 @@ public abstract class Message {
 	public int getPayloadSize() {
 		return payloadSize;
 	}
-	
+
 	public void setPayloadSize(int size) {
 		this.payloadSize = size;
 	}
-	
+
 	public abstract void read(LittleEndianInputStream in) throws IOException;
 	public abstract void toWire(LittleEndianOutputStream leos) throws IOException;
 

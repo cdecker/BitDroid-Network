@@ -31,10 +31,10 @@ public class StringUtils {
 		(byte)'4', (byte)'5', (byte)'6', (byte)'7',
 		(byte)'8', (byte)'9', (byte)'a', (byte)'b',
 		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
-	};    
+	};
 
-	public static String getHexString(byte[] raw) 
-	throws UnsupportedEncodingException 
+	public static String getHexString(byte[] raw)
+	throws UnsupportedEncodingException
 	{
 		byte[] hex = new byte[2 * raw.length];
 		int index = 0;
@@ -53,8 +53,8 @@ public class StringUtils {
 
 		while (left < right) {
 			// exchange the left and right elements
-			byte temp = b[left]; 
-			b[left]  = b[right]; 
+			byte temp = b[left];
+			b[left]  = b[right];
 			b[right] = temp;
 
 			// move the bounds toward the center

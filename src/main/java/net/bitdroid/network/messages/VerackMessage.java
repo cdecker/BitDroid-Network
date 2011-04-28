@@ -29,7 +29,7 @@ public class VerackMessage extends EmptyMessage {
 	public String getCommand() {
 		return "verack";
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

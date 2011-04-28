@@ -99,7 +99,7 @@ public class TestLittleEndianOutputStream {
 		leos.writeLong(s);
 		assertEquals(s, LittleEndianInputStream.wrap(b).readLong());
 	}
-	
+
 	@Test
 	public final void testWriteUnisgnedInt() throws IOException {
 		byte b[] = new byte[8];
@@ -115,8 +115,8 @@ public class TestLittleEndianOutputStream {
 
 		while (left < right) {
 			// exchange the left and right elements
-			byte temp = b[left]; 
-			b[left]  = b[right]; 
+			byte temp = b[left];
+			b[left]  = b[right];
 			b[right] = temp;
 
 			// move the bounds toward the center

@@ -62,7 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
+public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 
 
 	private PriorityQueue<DeferredTask> taskQueue = new PriorityQueue<DeferredTask>();
@@ -71,7 +71,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	private Selector selector;
 	private ServerSocketChannel serverChannel; 
-	private Logger log = LoggerFactory.getLogger(NonBlockingBitcoinReactorNetwork.class);
+	private Logger log = LoggerFactory.getLogger(BitcoinReactorNetwork.class);
 
 	// A list of PendingChange instances
 	private List<ChangeRequest> pendingChanges = new LinkedList<ChangeRequest>();
@@ -80,7 +80,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 	// Tracking the state of the sockets
 	private Map<SocketChannel, SocketState> socketStates = new HashMap<SocketChannel, SocketState>();
 
-	public NonBlockingBitcoinReactorNetwork(int port) throws IOException {
+	public BitcoinReactorNetwork(int port) throws IOException {
 		this.port = port;
 		this.init();
 	}

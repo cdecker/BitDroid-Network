@@ -41,16 +41,16 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 	private Set<PeerAddress> connectedAddresses = new LinkedHashSet<PeerAddress>();
 	private int connected = 0;
 	private int maxConnected = 8;
-	private NonBlockingBitcoinReactorNetwork network;
+	private BitcoinReactorNetwork network;
 	private long lastAttempt = 0;
 	private Logger log = LoggerFactory.getLogger(PoolMaintainerListener.class);
 
-	public PoolMaintainerListener(NonBlockingBitcoinReactorNetwork network, int poolsize){
+	public PoolMaintainerListener(BitcoinReactorNetwork network, int poolsize){
 		this.network = network;
 		this.maxConnected = poolsize;
 	}
 
-	public PoolMaintainerListener(NonBlockingBitcoinReactorNetwork network){
+	public PoolMaintainerListener(BitcoinReactorNetwork network){
 		this.network = network;
 	}
 

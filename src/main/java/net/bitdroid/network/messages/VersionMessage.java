@@ -21,7 +21,7 @@ package net.bitdroid.network.messages;
 import java.io.IOException;
 import java.net.ProtocolException;
 
-import net.bitdroid.network.NonBlockingBitcoinReactorNetwork;
+import net.bitdroid.network.BitcoinReactorNetwork;
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.ProtocolVersion;
 import net.bitdroid.network.wire.LittleEndianInputStream;
@@ -42,7 +42,7 @@ public class VersionMessage extends Message {
 		this.timestamp = timestamp;
 	}
 
-	private long protocolVersion = NonBlockingBitcoinReactorNetwork.PROTOCOL_VERSION;
+	private long protocolVersion = BitcoinReactorNetwork.PROTOCOL_VERSION;
 	
 	// Default services for this client 
 	private byte[] localServices = new byte[]{1,0,0,0,0,0,0,0};

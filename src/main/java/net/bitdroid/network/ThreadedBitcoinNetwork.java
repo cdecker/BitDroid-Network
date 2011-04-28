@@ -42,11 +42,11 @@ import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
 /**
- * @deprecated The threaded network is not supported, use {@link NonBlockingBitcoinReactorNetwork} instead.
+ * @deprecated The threaded network is not supported, use {@link BitcoinReactorNetwork} instead.
  * @author cdecker
  *
  */
-public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
+public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 	protected InputStream inputStream;
 	protected OutputStream outputStream;
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
@@ -70,10 +70,10 @@ public class ThreadedBitcoinReactor extends BitcoinNetwork implements Runnable {
 	/**
 	 * C'tor only for unit tests.
 	 */
-	ThreadedBitcoinReactor() {
+	ThreadedBitcoinNetwork() {
 	}
 
-	public ThreadedBitcoinReactor(Socket socket) throws IOException{
+	public ThreadedBitcoinNetwork(Socket socket) throws IOException{
 		inputStream = socket.getInputStream();
 		outputStream = socket.getOutputStream();
 		this.socket = socket;

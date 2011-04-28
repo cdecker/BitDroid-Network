@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -36,7 +37,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.AddrMessage;
@@ -50,6 +53,8 @@ import net.bitdroid.network.messages.Transaction;
 import net.bitdroid.network.messages.UnknownMessage;
 import net.bitdroid.network.messages.VerackMessage;
 import net.bitdroid.network.messages.VersionMessage;
+import net.bitdroid.network.tasks.DeferredTask;
+import net.bitdroid.network.tasks.RepeatingDeferredTask;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -59,6 +64,8 @@ import org.slf4j.LoggerFactory;
 
 public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 
+
+	private PriorityQueue<DeferredTask> taskQueue = new PriorityQueue<DeferredTask>();
 	private InetAddress hostAddress = InetAddress.getByName("0.0.0.0");
 	private int port;
 
@@ -105,7 +112,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 
 	protected Event readMessage(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		
+
 		// For the case of an incomplete read, we create an Incomplete message
 		// and then try to fill it. Should there already be an incomplete
 		// message we use that one
@@ -132,7 +139,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 			socketChannel.read(buf);
 			byte b[] = buf.array();
 			im.size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 | 
-				(b[1] & 0xFF) << 8 | (b[0] & 0xFF));
+					(b[1] & 0xFF) << 8 | (b[0] & 0xFF));
 
 			if(socketStates.get(socketChannel).currentState != SocketState.HANDSHAKE){
 				im.checksum = ByteBuffer.allocate(4);
@@ -141,7 +148,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 			}
 			im.buffer = ByteBuffer.allocate(im.size);
 		}
-		
+
 		// Now attempt to fill the rest of the buffer, should we be unable to
 		// fill it completely push it back to the buffers
 		socketChannel.read(im.buffer);
@@ -201,31 +208,41 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 	}
 
 	/**
+	 * Process requested changes to the sockets and register new interests to
+	 * the selector keys.
+	 * 
+	 * @throws ClosedChannelException
+	 */
+	private void processChanges() throws ClosedChannelException{
+		// Process any pending changes
+		synchronized (this.pendingChanges) {
+			Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
+			while (changes.hasNext()) {
+				ChangeRequest change = (ChangeRequest) changes.next();
+				switch (change.type) {
+				case ChangeRequest.CHANGEOPS:
+					SelectionKey key = change.socket.keyFor(selector);
+					key.interestOps(change.ops);
+				case ChangeRequest.REGISTER:
+					change.socket.register(selector, change.ops);
+					break;
+				}
+			}
+			this.pendingChanges.clear();
+		}
+	}
+
+	/**
 	 * 
 	 */
 	public void run() {
 		addListener(new BitcoinClientDriver(this));
 		while (true) {
 			try {
-				// Process any pending changes
-				synchronized (this.pendingChanges) {
-					Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
-					while (changes.hasNext()) {
-						ChangeRequest change = (ChangeRequest) changes.next();
-						switch (change.type) {
-						case ChangeRequest.CHANGEOPS:
-							SelectionKey key = change.socket.keyFor(selector);
-							key.interestOps(change.ops);
-						case ChangeRequest.REGISTER:
-							change.socket.register(selector, change.ops);
-							break;
-						}
-					}
-					this.pendingChanges.clear();
-				}
-
+				processChanges();
+				long next = executeTasks();
 				// Wait for an event one of the registered channels
-				selector.select();
+				selector.select(next);
 
 				// Iterate over the set of keys for which events are available
 				Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
@@ -270,8 +287,35 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 				e.printStackTrace();
 			}
 		}
-
 	}
+
+	/**
+	 * Execute tasks that are due now. It returns the time the selector is
+	 * allowed to sleep until the next task is due.
+	 * 
+	 * @return milliseconds until the next scheduled task.
+	 */
+	protected long executeTasks(){
+		// So now we execute scheduled tasks
+		while(taskQueue.peek() != null &&
+				taskQueue.peek().getDelay(TimeUnit.MILLISECONDS) <= 0){
+			DeferredTask task = taskQueue.poll();
+			try{
+				task.execute();
+			}catch(Throwable t){
+				log.error("Error while executing deferred task", t);
+			}
+			if(task instanceof RepeatingDeferredTask){
+				((RepeatingDeferredTask) task).reschedule();
+				this.queueTask(task);
+			}
+		}
+		if(taskQueue.peek() == null)
+			return 0;
+		else
+			return taskQueue.peek().getDelay(TimeUnit.MILLISECONDS);
+	}
+
 
 	/**
 	 * Cleanly disconnect a socketChannel and clean out all the state maintained
@@ -321,14 +365,14 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 						(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
 				if(socketStates.get(socketChannel).currentState == SocketState.OPEN)
 					try{
-					socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
+						socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
 					}catch(NoSuchAlgorithmException e){
 						log.error("Error initializing hashing algorithm", e);
 						this.disconnect(socketChannel);
 						return;
 					}
 
-				socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
+					socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
 			}
 
 			if (queue.isEmpty()) {
@@ -417,6 +461,18 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		return res;
 	}
 
+	/**
+	 * Enqueue a new task to be run by the reactor.
+	 * @param task
+	 */
+	public void queueTask(DeferredTask task){
+		taskQueue.add(task);
+		// If we scheduled a new next task we have to artificially wake up the
+		// selector
+		if(task.getDelay(TimeUnit.MILLISECONDS) < taskQueue.peek().getDelay(TimeUnit.MILLISECONDS))
+			this.selector.wakeup();
+	}
+
 	public class ChangeRequest {
 		public static final int REGISTER = 1;
 		public static final int CHANGEOPS = 2;
@@ -438,6 +494,7 @@ public class NonBlockingBitcoinReactorNetwork extends BitcoinNetwork implements 
 		public final static int SHUTDOWN = 2;
 		protected int currentState = SocketState.HANDSHAKE;
 	}
+
 	public class IncompleteMessage {
 		ByteBuffer buffer;
 		String command;

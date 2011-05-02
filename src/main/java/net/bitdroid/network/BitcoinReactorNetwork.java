@@ -469,7 +469,8 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		taskQueue.add(task);
 		// If we scheduled a new next task we have to artificially wake up the
 		// selector
-		if(task.getDelay(TimeUnit.MILLISECONDS) < taskQueue.peek().getDelay(TimeUnit.MILLISECONDS))
+		if(taskQueue.peek() == null ||
+				task.getDelay(TimeUnit.MILLISECONDS) < taskQueue.peek().getDelay(TimeUnit.MILLISECONDS))
 			this.selector.wakeup();
 	}
 

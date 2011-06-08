@@ -22,12 +22,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.AddrMessage;
 import net.bitdroid.network.messages.GetAddrMessage;
 import net.bitdroid.network.messages.PeerAddress;
 import net.bitdroid.network.messages.VerackMessage;
+import net.bitdroid.network.tasks.RepeatingDeferredTask;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * @author cdecker
  *
  */
-public class PoolMaintainerListener implements BitcoinEventListener {
+public class PoolMaintainerListener extends RepeatingDeferredTask implements BitcoinEventListener {
 	private Set<PeerAddress> addresses = new LinkedHashSet<PeerAddress>();
 	private Set<PeerAddress> connectedAddresses = new LinkedHashSet<PeerAddress>();
 	private int connected = 0;
@@ -46,11 +48,13 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 	private Logger log = LoggerFactory.getLogger(PoolMaintainerListener.class);
 
 	public PoolMaintainerListener(BitcoinReactorNetwork network, int poolsize){
+		super(5, TimeUnit.SECONDS);
 		this.network = network;
 		this.maxConnected = poolsize;
 	}
 
 	public PoolMaintainerListener(BitcoinReactorNetwork network){
+		super(5, TimeUnit.SECONDS);
 		this.network = network;
 	}
 
@@ -63,7 +67,7 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 		}else if(e.getType() == EventType.DISCONNECTED_TYPE){
 			connected--;
 		}else if(e.getSubject() instanceof VerackMessage){
-			Event event = new Event(e.getOrigin(), new GetAddrMessage());
+			Event event = new Event(e.getOrigin(), EventType.GET_ADDR_TYPE, new GetAddrMessage());
 			try {
 				network.sendMessage(event);
 			} catch (IOException e1) {
@@ -81,37 +85,29 @@ public class PoolMaintainerListener implements BitcoinEventListener {
 				i.remove();
 			}
 		}
-		if(addresses.size() < 500)
-			try {
-				network.sendMessage(new Event(e.getOrigin(), new GetAddrMessage()));
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		connect();
 	}
 
-	private void connect() {
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.BitcoinEventListener#messageSent(net.bitdroid.network.Event)
+	 */
+	public void messageSent(Event e) {}
+
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.tasks.DeferredTask#execute()
+	 */
+	@Override
+	public void execute() {
 		if(connected < maxConnected && !connectedAddresses.containsAll(addresses) && lastAttempt < System.currentTimeMillis() - 500){
-			log.debug("Trying to open a new connection. Already connected to {}", connected);
 			lastAttempt = System.currentTimeMillis();
 			// Attempt a new connection
 			Set<PeerAddress> unconnected = new HashSet<PeerAddress>();
 			unconnected.addAll(addresses);
 			unconnected.removeAll(connectedAddresses);
 			PeerAddress a = unconnected.iterator().next();
+			log.debug("Trying to open a new connection to {}. Already connected to {}", a, connected);
 			network.connect(a);
 			connectedAddresses.add(a);
 		}
-
-	}
-
-	/* (non-Javadoc)
-	 * @see net.bitdroid.network.BitcoinEventListener#messageSent(net.bitdroid.network.Event)
-	 */
-	public void messageSent(Event e) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

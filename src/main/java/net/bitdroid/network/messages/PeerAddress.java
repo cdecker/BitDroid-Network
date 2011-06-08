@@ -19,6 +19,7 @@
 package net.bitdroid.network.messages;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 
 import net.bitdroid.network.Event.EventType;
@@ -31,21 +32,9 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	}
 
 	private long services;
-	private byte reserved[] = new byte[8];
 	private int lastSeen = 0;
 
 	public PeerAddress(){
-		reserved = new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
-				(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
-				(byte)0x00,(byte)0xFF,(byte)0xFF};
-	}
-
-	public byte[] getReserved() {
-		return reserved;
-	}
-
-	public void setReserved(byte[] reserved) {
-		this.reserved = reserved;
 	}
 
 	private InetAddress address;
@@ -110,9 +99,9 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	@Override
 	public void read(LittleEndianInputStream in) throws IOException {
 		setServices(in.readLong());
-		reserved = new byte[12];
-		in.read(reserved);
-		byte[] b = new byte[4];
+//		reserved = new byte[16];
+//		in.read(reserved);
+		byte[] b = new byte[16];
 		in.read(b);
 		setAddress(InetAddress.getByAddress(b));
 		// Port uses network byte order, goddamn mix of ordering...
@@ -125,7 +114,12 @@ public class PeerAddress extends Message implements Comparable<PeerAddress>{
 	@Override
 	public void toWire(LittleEndianOutputStream leos) throws IOException {
 		leos.writeLong(services);
-		leos.write(reserved);
+		// If we have an IPv4 Adress pad it with the reserved bytes to form
+		// an <a href="https://secure.wikimedia.org/wikipedia/en/wiki/IPv6#IPv4-mapped_IPv6_addresses">IPv4-mapped address</a>
+		if(address.getAddress().length == 4)
+			leos.write(new byte[]{(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,(byte)0x00,
+				(byte)0x00,(byte)0xFF,(byte)0xFF});
 		leos.write(address.getAddress());
 		// Again: this is big-endian...
 		leos.write(new byte[]{(byte)(port >> 8 & 0xFF), (byte)(port & 0xFF)});

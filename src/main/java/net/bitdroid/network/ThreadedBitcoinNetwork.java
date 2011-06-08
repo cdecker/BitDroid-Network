@@ -23,21 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.bitdroid.network.messages.AddrMessage;
-import net.bitdroid.network.messages.BlockMessage;
-import net.bitdroid.network.messages.GetDataMessage;
-import net.bitdroid.network.messages.InventoryMessage;
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.Message;
-import net.bitdroid.network.messages.Transaction;
-import net.bitdroid.network.messages.UnknownMessage;
-import net.bitdroid.network.messages.VerackMessage;
-import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -53,11 +44,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 	protected long nonce;
 	protected Socket socket;
 
-	public enum ClientState {
-		HANDSHAKE, OPEN, SHUTDOWN
-	};
-
-	protected ClientState currentState = ClientState.HANDSHAKE;
+	protected SocketState state = new SocketState();
 
 	long getNonce() {
 		return nonce;
@@ -99,7 +86,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		int size = (int)((buf[3] & 0xFF) << 24 | (buf[2] & 0xFF) << 16 |
 				(buf[1] & 0xFF) << 8 | (buf[0] & 0xFF));
 
-		if(currentState != ClientState.HANDSHAKE){
+		if(state.currentState != SocketState.HANDSHAKE){
 			byte[] checksum = new byte[4];
 			inputStream.read(checksum);
 			// TODO add switch to check the checksum.
@@ -113,34 +100,14 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		LittleEndianInputStream leis = LittleEndianInputStream.wrap(b);
 
 		// Boilerplate to select the right message to initialize.
-		Message message;
+		Message message = createMessage(command);
+
+		// Just set the socket to require checksum flag
+		if(message.getType() == EventType.VERACK_TYPE)
+			state.currentState = SocketState.OPEN;
+
 		Event event = new Event();
 		event.setOrigin(this);
-		if("version".equalsIgnoreCase(command)){
-			message = new VersionMessage();
-
-		}else if("verack".equalsIgnoreCase(command)){
-			message = new VerackMessage();
-			// Just set the socket to require checksum flag
-			currentState = ClientState.OPEN;
-
-		}else if("inv".equalsIgnoreCase(command)){
-			message = new InventoryMessage();
-
-		}else if("addr".equalsIgnoreCase(command)){
-			message = new AddrMessage();
-
-		}else if("tx".equalsIgnoreCase(command)){
-			message = new Transaction();
-
-		}else if("getdata".equalsIgnoreCase(command)){
-			message = new GetDataMessage();
-		}else if("block".equalsIgnoreCase(command)){
-			message = new BlockMessage();
-		}else{
-			message = new UnknownMessage();
-			((UnknownMessage)message).setCommand(command);
-		}
 
 		message.setPayloadSize(size);
 		// And now each message knows how to read its format:
@@ -153,7 +120,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 	public void run() {
 		addListener(new BitcoinClientDriver(this));
 		try{
-			while(currentState != ClientState.SHUTDOWN && isConnected()){
+			while(state.currentState != SocketState.SHUTDOWN && isConnected()){
 				// Read the message
 				Event mess = readMessage();
 
@@ -165,15 +132,15 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 					}catch(Throwable t){}
 			}
 		}catch(IOException ioe){
-			currentState = ClientState.SHUTDOWN;
+			state.currentState = SocketState.SHUTDOWN;
 		}finally{
-			if(currentState == ClientState.SHUTDOWN)
+			if(state.currentState == SocketState.SHUTDOWN)
 				close();
 		}
 	}
 
 	public boolean isConnected(){
-		return socket.isConnected() && currentState != ClientState.SHUTDOWN;
+		return socket.isConnected() && state.currentState != SocketState.SHUTDOWN;
 	}
 
 	public synchronized void sendMessage(Event event) throws IOException {
@@ -194,26 +161,10 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		int size = outBuffer.toByteArray().length;
 		outputStream.write(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
 				(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)});
-		if(currentState == ClientState.OPEN)
+		if(state.currentState == SocketState.OPEN)
 			outputStream.write(calculateChecksum(outBuffer.toByteArray()));
 
 		outputStream.write(outBuffer.toByteArray());
-	}
-
-	byte[] calculateChecksum(byte[] b){
-		byte[] res = new byte[4];
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
-			md.reset();
-			byte[] o = md.digest(b);
-			md.reset();
-			o = md.digest(o);
-			for(int i=0; i<4; i++)
-				res[i] = o[i];
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		return res;
 	}
 
 	public void close(){
@@ -224,7 +175,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
-			currentState = ClientState.SHUTDOWN;
+			state.currentState = SocketState.SHUTDOWN;
 		}
 	}
 }

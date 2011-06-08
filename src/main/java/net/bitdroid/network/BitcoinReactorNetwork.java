@@ -23,14 +23,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,17 +41,8 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import net.bitdroid.network.Event.EventType;
-import net.bitdroid.network.messages.AddrMessage;
-import net.bitdroid.network.messages.BlockMessage;
-import net.bitdroid.network.messages.GetAddrMessage;
-import net.bitdroid.network.messages.GetDataMessage;
-import net.bitdroid.network.messages.InventoryMessage;
 import net.bitdroid.network.messages.Message;
 import net.bitdroid.network.messages.PeerAddress;
-import net.bitdroid.network.messages.Transaction;
-import net.bitdroid.network.messages.UnknownMessage;
-import net.bitdroid.network.messages.VerackMessage;
-import net.bitdroid.network.messages.VersionMessage;
 import net.bitdroid.network.tasks.DeferredTask;
 import net.bitdroid.network.tasks.RepeatingDeferredTask;
 import net.bitdroid.network.wire.LittleEndianInputStream;
@@ -166,38 +156,13 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			im.buffer.rewind();
 			LittleEndianInputStream leis = LittleEndianInputStream.wrap(im.buffer);
 			// Boilerplate to select the right message to initialize.
-			Message message;
 			Event event = new Event();
 			event.setOrigin(socketChannel);
-			if("version".equalsIgnoreCase(im.command)){
-				message = new VersionMessage();
-
-			}else if("verack".equalsIgnoreCase(im.command)){
-				message = new VerackMessage();
-				// Just set the socket to require checksum flag
+			Message message = createMessage(im.command);
+			event.setType(message.getType());
+			// Just set the socket to require checksum flag
+			if(message.getType() == EventType.VERACK_TYPE)
 				socketStates.get(socketChannel).currentState = SocketState.OPEN;
-
-			}else if("inv".equalsIgnoreCase(im.command)){
-				message = new InventoryMessage();
-
-			}else if("addr".equalsIgnoreCase(im.command)){
-				message = new AddrMessage();
-
-			}else if("tx".equalsIgnoreCase(im.command)){
-				message = new Transaction();
-
-			}else if("getdata".equalsIgnoreCase(im.command)){
-				message = new GetDataMessage();
-
-			}else if("getaddr".equalsIgnoreCase(im.command)){
-				message = new GetAddrMessage();
-
-			}else if("block".equalsIgnoreCase(im.command)){
-				message = new BlockMessage();
-			}else{
-				message = new UnknownMessage();
-				((UnknownMessage)message).setCommand(im.command);
-			}
 
 			message.setPayloadSize(im.size);
 			// And now each message knows how to read its format:
@@ -222,7 +187,10 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 				switch (change.type) {
 				case ChangeRequest.CHANGEOPS:
 					SelectionKey key = change.socket.keyFor(selector);
-					key.interestOps(change.ops);
+					if(key.isValid())
+						key.interestOps(change.ops);
+					else
+						key.cancel();
 				case ChangeRequest.REGISTER:
 					change.socket.register(selector, change.ops);
 					break;
@@ -260,6 +228,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 							channel.finishConnect();
 							socketStates.put(channel, new SocketState());
 						} catch (IOException e) {
+							publishReceivedEvent(new Event(key.channel(), EventType.FAILED_CONNECTION_TYPE, null));
 							// Cancel the channel's registration with our selector
 							key.cancel();
 							continue;
@@ -364,14 +333,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 				socketChannel.write(ByteBuffer.wrap(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
 						(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
 				if(socketStates.get(socketChannel).currentState == SocketState.OPEN)
-					try{
-						socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
-					}catch(NoSuchAlgorithmException e){
-						log.error("Error initializing hashing algorithm", e);
-						this.disconnect(socketChannel);
-						return;
-					}
-
+					socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
 					socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
 			}
 
@@ -446,21 +408,6 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		}
 	}
 
-	private MessageDigest hasher;
-
-	byte[] calculateChecksum(byte[] b) throws NoSuchAlgorithmException {
-		byte[] res = new byte[4];
-		if(hasher == null)
-			hasher = MessageDigest.getInstance("SHA-256");
-		hasher.reset();
-		byte[] o = hasher.digest(b);
-		hasher.reset();
-		o = hasher.digest(o);
-		for(int i=0; i<4; i++)
-			res[i] = o[i];
-		return res;
-	}
-
 	/**
 	 * Enqueue a new task to be run by the reactor.
 	 * @param task
@@ -487,13 +434,6 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			this.type = type;
 			this.ops = ops;
 		}
-	}
-
-	public class SocketState {
-		public final static int HANDSHAKE = 0;
-		public final static int OPEN = 1;
-		public final static int SHUTDOWN = 2;
-		protected int currentState = SocketState.HANDSHAKE;
 	}
 
 	public class IncompleteMessage {

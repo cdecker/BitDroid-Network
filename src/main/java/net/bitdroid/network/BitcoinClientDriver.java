@@ -72,7 +72,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				p.setServices(1L);
 				version.setYourAddress(p);
 				version.setTimestamp(System.currentTimeMillis());
-				network.sendMessage(new Event(event.getOrigin(), version));
+				network.sendMessage(new Event(event.getOrigin(), EventType.VERSION_TYPE, version));
 				state.versionSent = true;
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
@@ -93,10 +93,10 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 			version.setYourAddress(hisVersion.getMyAddress());
 			version.setTimestamp(System.currentTimeMillis());
 			try {
-				network.sendMessage(new Event(event.getOrigin(), verack));
+				network.sendMessage(new Event(event.getOrigin(), EventType.VERACK_TYPE, verack));
 				state.verackSent = true;
 				if(!state.versionSent){
-					network.sendMessage(new Event(event.getOrigin(), version));
+					network.sendMessage(new Event(event.getOrigin(), EventType.VERSION_TYPE, version));
 					state.versionSent = true;
 				}
 			} catch (IOException e) {
@@ -107,7 +107,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 		}else if(event.getType() == EventType.INVENTORY_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
-				network.sendMessage(new Event(event.getOrigin(), new PingMessage()));
+				network.sendMessage(new Event(event.getOrigin(), EventType.PING_TYPE, new PingMessage()));
 			} catch (IOException e){
 				log.error("Error sending ping", e);
 			}

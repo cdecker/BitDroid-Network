@@ -28,14 +28,20 @@ public class Event {
 	 * Indicates that apropriate actions have been taken to respond to the event.
 	 */
 	private boolean handled = false;
+
 	/**
 	 * Should this be false the reactor will stop notifying event listeners.
 	 */
 	private boolean propagate = true;
+	private EventType type;
+	private Message subject;
+	private Object origin;
+
 
 	public static enum EventType {
 		INCOMING_CONNECTION_TYPE,
 		OUTGOING_CONNECTION_TYPE,
+		FAILED_CONNECTION_TYPE,
 		DISCONNECTED_TYPE,
 		VERSION_TYPE,
 		VERACK_TYPE,
@@ -50,15 +56,18 @@ public class Event {
 		PART_TYPE // Used to indicate that the message is not a standalone message.
 	};
 
-	public Event(){}
-	public Event(Object o, Message m){
-		setOrigin(o);
-		setSubject(m);
+	public Event(Object origin, EventType type){
+		setOrigin(origin);
+		setType(type);
 	}
 
-	private EventType type;
-	private Message subject;
-	private Object origin;
+	public Event(){}
+
+	public Event(Object o, EventType type, Message m){
+		setOrigin(o);
+		setSubject(m);
+		setType(type);
+	}
 
 	/**
 	 * @return the type
@@ -70,8 +79,8 @@ public class Event {
 	/**
 	 * @param versionType the type to set
 	 */
-	public void setType(EventType versionType) {
-		this.type = versionType;
+	public void setType(EventType type) {
+		this.type = type;
 	}
 
 	/**
@@ -86,7 +95,6 @@ public class Event {
 	 */
 	public void setSubject(Message subject) {
 		this.subject = subject;
-		this.type = subject.getType();
 	}
 
 	/**

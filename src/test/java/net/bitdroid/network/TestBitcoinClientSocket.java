@@ -25,7 +25,8 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
-import net.bitdroid.network.ThreadedBitcoinNetwork.ClientState;
+import net.bitdroid.network.BitcoinNetwork.SocketState;
+import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.BlockMessage;
 import net.bitdroid.network.messages.InventoryMessage;
 import net.bitdroid.network.messages.Message;
@@ -71,7 +72,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		Message m = s.readMessage().getSubject();
 		assert(m instanceof VerackMessage);
 		assertEquals(m.getPayloadSize(), 0);
-		assertTrue("Checksum is set on the socket", s.currentState == ClientState.OPEN);
+		assertTrue("Checksum is set on the socket", s.state.currentState == SocketState.OPEN);
 	}
 
 	@Test
@@ -82,7 +83,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		assertEquals(m.getPayloadSize(), 85);
 		assertEquals(31700, m.getProtocolVersion());
 		assertEquals(1292970988, m.getTimestamp());
-		assertEquals("Checksum is set not yet enabled on the socket", ClientState.HANDSHAKE, s.currentState);
+		assertEquals("Checksum is set not yet enabled on the socket", SocketState.HANDSHAKE, s.state.currentState);
 		assertEquals("/87.118.94.169", m.getYourAddress().getAddress().toString());
 		assertEquals("/213.200.193.129", m.getMyAddress().getAddress().toString());
 		assertEquals("", m.getClientVersion());
@@ -97,7 +98,7 @@ public class TestBitcoinClientSocket extends TestCase {
 		byte[] buf = readDump("bitcoin-version-1.dump", 105);
 		byte[] output = new byte[105];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.VERSION_TYPE, m));
 		assert(Arrays.equals(buf, output));
 	}
 
@@ -133,7 +134,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testReadInvMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-inv-2.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		InventoryMessage m = (InventoryMessage)s.readMessage().getSubject();
 		assertEquals(8, m.getItems().size());
 	}
@@ -160,7 +161,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testReadTxMessage() throws IOException{
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-tx-14.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		Transaction m = (Transaction)s.readMessage().getSubject();
 		assertEquals(1,m.getInputs().size());
 		TxInput txIn = m.getInputs().get(0);
@@ -173,7 +174,7 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testReadBlockMessage() throws IOException{
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-block-3.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		assertEquals(1, m.getVersion());
 
@@ -187,60 +188,60 @@ public class TestBitcoinClientSocket extends TestCase {
 	@Test
 	public void testReadWriteBlockMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-block-3.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		BlockMessage m = (BlockMessage)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-block-3.dump", 7266);
 		byte[] output = new byte[7266];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.BLOCK_TYPE, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
 
 	@Test
 	public void testReadWriteTransaction() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-tx-14.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		Transaction m = (Transaction)s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-tx-14.dump", 282);
 		byte[] output = new byte[282];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.TRANSACTION_TYPE, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
 
 	@Test
 	public void testReadWriteAddrMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-addr-11.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-addr-11.dump", 5335);
 		byte[] output = new byte[5335];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.ADDR_TYPE, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
 
 	@Test
 	public void testReadWriteInventoryMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-inv-2.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-inv-2.dump", 313);
 		byte[] output = new byte[313];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.INVENTORY_TYPE, m));
 		assertEquals(StringUtils.getHexString(buf), StringUtils.getHexString(output));
 	}
 
 	@Test
 	public void testReadWriteGetDataMessage() throws IOException {
 		ThreadedBitcoinNetwork s = prepareWithDump("bitcoin-getdata-72.dump");
-		s.currentState = ClientState.OPEN;
+		s.state.currentState = SocketState.OPEN;
 		Message m = s.readMessage().getSubject();
 		byte[] buf = readDump("bitcoin-getdata-72.dump", 61);
 		byte[] output = new byte[61];
 		s.outputStream = LittleEndianOutputStream.wrap(output);
-		s.sendMessage(new Event(null, m));
+		s.sendMessage(new Event(null, EventType.GET_DATA_TYPE, m));
 		assertEquals(buf, output);
 	}
 

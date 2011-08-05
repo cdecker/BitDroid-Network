@@ -330,7 +330,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 						(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
 				if(socketStates.get(socketChannel).currentState == SocketState.OPEN)
 					socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
-					socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
+				socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
 			}
 
 			if (queue.isEmpty()) {
@@ -437,5 +437,22 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		String command;
 		ByteBuffer checksum;
 		int size;
+	}
+
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.BitcoinNetwork#broadcast(net.bitdroid.network.messages.Message)
+	 */
+	@Override
+	public void broadcast(Message message, Object exclude) {
+		for(SocketChannel sc : socketStates.keySet()){
+			if(sc == exclude)
+				continue;
+			try {
+				this.sendMessage(new Event(sc, message.getType(), message));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }

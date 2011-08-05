@@ -170,4 +170,21 @@ public abstract class BitcoinNetwork {
 		return message;
 	}
 
+	/**
+	 * Broadcasting to the network means sending a Message to all connected
+	 * peers, except the excluded the source of the broadcast.
+	 * 
+	 * @param message
+	 * @param exclude
+	 */
+	public abstract void broadcast(Message message, Object exclude);
+
+	/**
+	 * Shortcut to broadcast to everybody
+	 * @param message
+	 */
+	public final void broadcast(Message message){
+		this.broadcast(message, null);
+	}
+
 }

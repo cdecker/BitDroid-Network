@@ -18,6 +18,8 @@
 package net.bitdroid.network.messages;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -95,6 +97,34 @@ public class BlockMessage extends Message {
 		leos.writeVariableSize(transactions.size());
 		for(Transaction t : transactions)
 			t.toWire(leos);
+	}
+
+	public byte[] getHash() throws NoSuchAlgorithmException{
+		byte b[] = new byte[80];
+		LittleEndianOutputStream leos = LittleEndianOutputStream.wrap(b);
+		try {
+			// Re reverse those byte arrays:
+			byte _previousHash[] = previousHash.clone();
+			StringUtils.reverse(_previousHash);
+			byte _nonce[] = nonce.clone();
+			StringUtils.reverse(_nonce);
+			byte _merkleRoot[] = merkleRoot.clone();
+			StringUtils.reverse(_merkleRoot);
+			leos.writeUnsignedInt(version);
+			leos.write(_previousHash);
+			leos.write(_merkleRoot);
+			leos.writeUnsignedInt(timestamp);
+			leos.writeUnsignedInt(target);
+			leos.write(_nonce);
+		} catch (IOException e) {
+			// Should never happen since we know exactly what's going in there
+			e.printStackTrace();
+		}
+		MessageDigest hasher = MessageDigest.getInstance("SHA-256");
+		byte h[] = hasher.digest(b);
+		hasher.reset();
+		h = hasher.digest(h);
+		return h;
 	}
 
 	/**

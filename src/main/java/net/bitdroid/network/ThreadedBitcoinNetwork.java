@@ -178,11 +178,12 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 	}
 
 	/* (non-Javadoc)
-	 * @see net.bitdroid.network.BitcoinNetwork#broadcast(net.bitdroid.network.messages.Message)
+	 * @see net.bitdroid.network.BitcoinNetwork#broadcast(net.bitdroid.network.messages.Message, java.lang.Object)
 	 */
 	@Override
-	public void broadcast(Message message) {
+	public void broadcast(Message message, Object exclude) {
 		// TODO Auto-generated method stub
 		
 	}
+
 }

@@ -34,7 +34,6 @@ public class Event {
 	 */
 	private boolean propagate = true;
 	private EventType type;
-	private Message subject;
 	private Object origin;
 
 
@@ -65,7 +64,6 @@ public class Event {
 
 	public Event(Object o, EventType type, Message m){
 		setOrigin(o);
-		setSubject(m);
 		setType(type);
 	}
 
@@ -81,20 +79,6 @@ public class Event {
 	 */
 	public void setType(EventType type) {
 		this.type = type;
-	}
-
-	/**
-	 * @return the subject
-	 */
-	public Message getSubject() {
-		return subject;
-	}
-
-	/**
-	 * @param subject the subject to set
-	 */
-	public void setSubject(Message subject) {
-		this.subject = subject;
 	}
 
 	/**
@@ -144,6 +128,6 @@ public class Event {
 	}
 
 	public String toString(){
-		return "Event[" + getType() + "," + getSubject() + "]";
+		return "Event[" + getType() + "]";
 	}
 }

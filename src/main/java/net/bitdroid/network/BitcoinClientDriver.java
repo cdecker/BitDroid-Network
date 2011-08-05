@@ -72,7 +72,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				p.setServices(1L);
 				version.setYourAddress(p);
 				version.setTimestamp(System.currentTimeMillis());
-				network.sendMessage(new Event(event.getOrigin(), EventType.VERSION_TYPE, version));
+				network.sendMessage(event.getOrigin(), version);
 				state.versionSent = true;
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
@@ -86,17 +86,17 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 			// Create a verack and send it back
 
 			state.versionReceived = true;
-			VersionMessage hisVersion = (VersionMessage)event.getSubject();
+			VersionMessage hisVersion = (VersionMessage)event;
 			VerackMessage verack = new VerackMessage();
 			VersionMessage version = new VersionMessage();
 			version.setMyAddress(hisVersion.getYourAddress());
 			version.setYourAddress(hisVersion.getMyAddress());
 			version.setTimestamp(System.currentTimeMillis());
 			try {
-				network.sendMessage(new Event(event.getOrigin(), EventType.VERACK_TYPE, verack));
+				network.sendMessage(event.getOrigin(), verack);
 				state.verackSent = true;
 				if(!state.versionSent){
-					network.sendMessage(new Event(event.getOrigin(), EventType.VERSION_TYPE, version));
+					network.sendMessage(event.getOrigin(), version);
 					state.versionSent = true;
 				}
 			} catch (IOException e) {
@@ -107,7 +107,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 		}else if(event.getType() == EventType.INVENTORY_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
-				network.sendMessage(new Event(event.getOrigin(), EventType.PING_TYPE, new PingMessage()));
+				network.sendMessage(event.getOrigin(), new PingMessage());
 			} catch (IOException e){
 				log.error("Error sending ping", e);
 			}

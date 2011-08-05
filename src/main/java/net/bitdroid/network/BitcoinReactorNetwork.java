@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -43,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.Message;
 import net.bitdroid.network.messages.PeerAddress;
+import net.bitdroid.network.messages.VerackMessage;
 import net.bitdroid.network.tasks.DeferredTask;
 import net.bitdroid.network.tasks.RepeatingDeferredTask;
 import net.bitdroid.network.wire.LittleEndianInputStream;
@@ -100,7 +100,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	 */
 	protected Map<SocketChannel, IncompleteMessage> incompleteBuffer = new HashMap<SocketChannel, IncompleteMessage>();
 
-	protected Event readMessage(SelectionKey key) throws IOException {
+	protected Message readMessage(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 
 		// For the case of an incomplete read, we create an Incomplete message
@@ -156,19 +156,16 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			im.buffer.rewind();
 			LittleEndianInputStream leis = LittleEndianInputStream.wrap(im.buffer);
 			// Boilerplate to select the right message to initialize.
-			Event event = new Event();
-			event.setOrigin(socketChannel);
 			Message message = createMessage(im.command);
-			event.setType(message.getType());
+			message.setOrigin(socketChannel);
 			// Just set the socket to require checksum flag
-			if(message.getType() == EventType.VERACK_TYPE)
+			if(message instanceof VerackMessage)
 				socketStates.get(socketChannel).currentState = SocketState.OPEN;
 
 			message.setPayloadSize(im.size);
 			// And now each message knows how to read its format:
 			message.read(leis);
-			event.setSubject(message);
-			return event;
+			return message;
 		}
 	}
 
@@ -317,14 +314,13 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
-				//OutputStream outputStream = socketChannel.socket().getOutputStream();
-				Event event = queue.poll();
-				publishSentEvent(event);
+				Message message = (Message)queue.poll();
+				publishSentEvent(message);
 				ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
-				event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
+				message.toWire(new LittleEndianOutputStream(outBuffer));
 				socketChannel.write(ByteBuffer.wrap(ProtocolVersion.getMagic()));
 				// write the command
-				String command = event.getSubject().getCommand();
+				String command = message.getCommand();
 				socketChannel.write(ByteBuffer.wrap(command.getBytes()));
 				// Pad with 0s
 				socketChannel.write(ByteBuffer.allocate(12 - command.length()));
@@ -368,7 +364,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.BitcoinNetwork#sendMessage(net.bitdroid.network.messages.Event)
 	 */
-	public void sendMessage(Event event) throws IOException {
+	public void sendMessage(Message event) throws IOException {
 		SocketChannel socket = (SocketChannel)event.getOrigin();
 		synchronized (pendingChanges) {
 			// Indicate we want the interest ops set changed

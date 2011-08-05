@@ -20,11 +20,11 @@ package net.bitdroid.network.messages;
 
 import java.io.IOException;
 
-import net.bitdroid.network.Event.EventType;
+import net.bitdroid.network.Event;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
-public abstract class Message {
+public abstract class Message extends Event {
 	public abstract EventType getType();
 
 	/**

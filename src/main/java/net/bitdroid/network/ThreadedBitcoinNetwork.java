@@ -70,7 +70,7 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		this.eventListeners.add(listener);
 	}
 
-	protected Event readMessage() throws IOException{
+	protected Message readMessage() throws IOException{
 		// Read magic
 		byte buf[] = new byte[4];
 		inputStream.read(buf);
@@ -106,14 +106,12 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		if(message.getType() == EventType.VERACK_TYPE)
 			state.currentState = SocketState.OPEN;
 
-		Event event = new Event();
-		event.setOrigin(this);
+		message.setOrigin(this);
 
 		message.setPayloadSize(size);
 		// And now each message knows how to read its format:
 		message.read(leis);
-		event.setSubject(message);
-		return event;
+		return message;
 
 	}
 
@@ -143,16 +141,16 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		return socket.isConnected() && state.currentState != SocketState.SHUTDOWN;
 	}
 
-	public synchronized void sendMessage(Event event) throws IOException {
+	public synchronized void sendMessage(Message event) throws IOException {
 		for(BitcoinEventListener listener : eventListeners)
 			try{
 				listener.messageSent(event);
 			}catch(Throwable t){}
 		ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
-		event.getSubject().toWire(new LittleEndianOutputStream(outBuffer));
+		event.toWire(new LittleEndianOutputStream(outBuffer));
 		outputStream.write(ProtocolVersion.getMagic());
 		// write the command
-		String command = event.getSubject().getCommand();
+		String command = event.getCommand();
 		outputStream.write(command.getBytes());
 		// Pad with 0s
 		for(int i=command.length(); i<12; i++)

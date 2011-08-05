@@ -44,7 +44,12 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BitcoinNetwork {
 	public static final int PROTOCOL_VERSION = 31700;
-	public abstract void sendMessage(Event event) throws IOException;
+	public abstract void sendMessage(Message event) throws IOException;
+
+	public void sendMessage(Object destination, Message message) throws IOException{
+		message.setOrigin(destination);
+		sendMessage(message);
+	}
 	protected List<BitcoinEventListener> eventListeners = new LinkedList<BitcoinEventListener>();
 	private Logger log = LoggerFactory.getLogger(BitcoinNetwork.class);
 

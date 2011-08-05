@@ -66,16 +66,14 @@ public class PoolMaintainerListener extends RepeatingDeferredTask implements Bit
 			connected++;
 		}else if(e.getType() == EventType.DISCONNECTED_TYPE){
 			connected--;
-		}else if(e.getSubject() instanceof VerackMessage){
-			Event event = new Event(e.getOrigin(), EventType.GET_ADDR_TYPE, new GetAddrMessage());
+		}else if(e instanceof VerackMessage){
 			try {
-				network.sendMessage(event);
+				network.sendMessage(e.getOrigin(), new GetAddrMessage());
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-		}else if(e.getSubject() instanceof AddrMessage){
-			AddrMessage am = (AddrMessage)e.getSubject();
+		}else if(e instanceof AddrMessage){
+			AddrMessage am = (AddrMessage)e;
 			for(PeerAddress a : am.getAddresses())
 				if(a.getPort() > 0)
 					addresses.add(a);

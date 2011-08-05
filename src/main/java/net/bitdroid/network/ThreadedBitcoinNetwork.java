@@ -176,4 +176,13 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 			state.currentState = SocketState.SHUTDOWN;
 		}
 	}
+
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.BitcoinNetwork#broadcast(net.bitdroid.network.messages.Message)
+	 */
+	@Override
+	public void broadcast(Message message) {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -17,7 +17,6 @@
  */
 package net.bitdroid.network.messages;
 
-import net.bitdroid.network.Event.EventType;
 
 /**
  * @author cdecker
@@ -34,5 +33,18 @@ public class GetDataMessage extends InventoryMessage {
 	@Override
 	public String getCommand() {
 		return "getdata";
+	}
+	
+	/* (non-Javadoc)
+	 * @see net.bitdroid.network.messages.InventoryMessage#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("GetDataMessage[count=");
+		sb.append(getItems().size()).append(",");
+		for(InventoryItem i : getItems())
+			sb.append(i.toString()).append(" ");
+		sb.append("]");
+		return sb.toString();
 	}
 }

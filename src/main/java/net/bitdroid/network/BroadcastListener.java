@@ -17,33 +17,94 @@
  */
 package net.bitdroid.network;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Queue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.BlockMessage;
+import net.bitdroid.network.messages.GetDataMessage;
+import net.bitdroid.network.messages.InventoryMessage;
+import net.bitdroid.network.messages.InventoryMessage.InventoryItem;
+import net.bitdroid.network.messages.Message;
+import net.bitdroid.network.messages.Transaction;
+import net.bitdroid.utils.StringUtils;
 
 /**
  * @author cdecker
  *
  */
 public class BroadcastListener implements BitcoinEventListener {
+	private static Logger log = LoggerFactory.getLogger(BroadcastListener.class);
+	/**
+	 * 
+	 */
+	public BroadcastListener(BitcoinNetwork network) {
+		this.network = network;
+	}
 
+	private BitcoinNetwork network = null;
 	/**
 	 * How many events shall we remember?
 	 */
 	private int memorySize = 1000;
 
-	private HashSet<byte[]> memoryContent = new HashSet<byte[]>();
-	private List<byte[]> memoryOrder = new LinkedList<byte[]>();
+	private HashMap<String, Message> memoryContent = new HashMap<String, Message>();
+	private Queue<String> memoryOrder = new LinkedList<String>();
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.BitcoinEventListener#eventReceived(net.bitdroid.network.Event)
 	 */
 	public void eventReceived(Event e) throws Exception {
+		if(e.getType() == EventType.GET_DATA_TYPE){
+			for(InventoryItem ii : ((GetDataMessage)e).getItems()){
+				Message m = memoryContent.get(new String(ii.getHash()));
+				if(m != null)
+					network.sendMessage(e.getOrigin(), m);
+			}
+			return;
+		}
+
+		if(e instanceof InventoryMessage){
+			GetDataMessage gdm = new GetDataMessage();
+			for(InventoryItem ii : ((InventoryMessage)e).getItems()){
+				if(!memoryContent.containsKey(new String(ii.getHash())))
+					gdm.getItems().add(ii);
+			}
+			if(!gdm.getItems().isEmpty()){
+				log.debug("Asking {} for Inventory items {}", new Object[]{e.getOrigin(), gdm.getItems()});
+				network.sendMessage(e.getOrigin(), gdm);
+			}
+			return;
+		}
+
 		byte[] hash = null;
-		if(e.getType() == EventType.BLOCK_TYPE){
-			hash = ((BlockMessage)e.getSubject()).getHash();
+		int type = 0;
+		if(e instanceof BlockMessage){
+			hash = ((BlockMessage)e).getHash();
+			type = InventoryMessage.MSG_BLOCK;
+		}else if(e instanceof Transaction){
+			hash = ((Transaction)e).getHash();
+			type = InventoryMessage.MSG_TX;
+		}
+		if(hash == null)
+			return;
+		StringUtils.reverse(hash);
+		log.debug("Got Inventory item {} from {}" , new Object[]{StringUtils.getHexString(hash), e.getOrigin()});
+		
+		if(!memoryContent.containsKey(new String(hash))){
+			memoryOrder.add(new String(hash));
+			memoryContent.put(new String(hash), (Message)e);
+
+			// Remove an element if we are bigger than the maximum size.
+			if(memoryOrder.size() > memorySize)
+				memoryContent.remove(memoryOrder.poll());
+			// now that we have the Inventory Item for sure, broadcast an announcement:
+			InventoryMessage im = new InventoryMessage();
+			im.getItems().add(im.new InventoryItem(type, hash));
+			network.broadcast(im, e.getOrigin());
 		}
 	}
 
@@ -52,5 +113,4 @@ public class BroadcastListener implements BitcoinEventListener {
 	 */
 	public void messageSent(Event e) throws Exception {
 	}
-
 }

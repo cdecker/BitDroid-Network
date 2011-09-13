@@ -23,7 +23,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 import net.bitdroid.utils.StringUtils;
@@ -80,7 +79,7 @@ public class InventoryMessage extends Message {
 			this.hash = hash;
 			this.type = type;
 		}
-
+		
 		/* (non-Javadoc)
 		 * @see java.lang.Object#toString()
 		 */

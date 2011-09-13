@@ -17,12 +17,14 @@
  */
 package net.bitdroid.network.messages;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.wire.LittleEndianInputStream;
 import net.bitdroid.network.wire.LittleEndianOutputStream;
 
@@ -272,5 +274,24 @@ public class Transaction extends Message {
 	 */
 	public void setOutputs(List<TxOutput> outputs) {
 		this.outputs = outputs;
+	}
+
+	/**
+	 * @return
+	 * @throws NoSuchAlgorithmException 
+	 */
+	public byte[] getHash() throws NoSuchAlgorithmException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		LittleEndianOutputStream leos = new LittleEndianOutputStream(baos);
+		try {
+			this.toWire(leos);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		MessageDigest hasher = MessageDigest.getInstance("SHA-256");
+		byte h[] = hasher.digest(baos.toByteArray());
+		hasher.reset();
+		h = hasher.digest(h);
+		return h;
 	}
 }

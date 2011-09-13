@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -189,7 +190,19 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 					else
 						key.cancel();
 				case ChangeRequest.REGISTER:
-					change.socket.register(selector, change.ops);
+					try{
+						change.socket.register(selector, change.ops);
+					}catch(ClosedChannelException cce){
+						log.error("Channel already closed, cleaning up", cce);
+						try{
+							change.socket.keyFor(this.selector).cancel();
+						}catch(CancelledKeyException cke){
+							log.info("Key already cancelled. This can be ignored. Cleanup will continue.", cke);
+						}
+						pendingMessages.remove(change.socket);
+						socketStates.remove(change.socket);
+						incompleteBuffer.remove(change.socket);
+					}
 					break;
 				}
 			}
@@ -250,7 +263,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 					}
 				}
 			} catch (Throwable e) {
-				e.printStackTrace();
+				log.error("Error while selecting or applying channel changes", e);
 			}
 		}
 	}
@@ -448,7 +461,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			if(sc == exclude)
 				continue;
 			try {
-				this.sendMessage(new Event(sc, message.getType(), message));
+				this.sendMessage(sc, message);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

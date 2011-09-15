@@ -65,6 +65,8 @@ public class BroadcastListener implements BitcoinEventListener {
 					log.debug("Peer {} asked for {}, sending item back", e.getOrigin(), ii.getHash());
 					network.sendMessage(e.getOrigin(), m);
 				}
+				if(m != null)
+					network.sendMessage(e.getOrigin(), m);
 			}
 			return;
 		}

@@ -61,8 +61,10 @@ public class BroadcastListener implements BitcoinEventListener {
 		if(e.getType() == EventType.GET_DATA_TYPE){
 			for(InventoryItem ii : ((GetDataMessage)e).getItems()){
 				Message m = memoryContent.get(new String(ii.getHash()));
-				if(m != null)
+				if(m != null){
+					log.debug("Peer {} asked for {}, sending item back", e.getOrigin(), ii.getHash());
 					network.sendMessage(e.getOrigin(), m);
+				}
 			}
 			return;
 		}
@@ -70,8 +72,12 @@ public class BroadcastListener implements BitcoinEventListener {
 		if(e instanceof InventoryMessage){
 			GetDataMessage gdm = new GetDataMessage();
 			for(InventoryItem ii : ((InventoryMessage)e).getItems()){
-				if(!memoryContent.containsKey(new String(ii.getHash())))
+				String h = new String(ii.getHash());
+				if(!memoryContent.containsKey(h)){
 					gdm.getItems().add(ii);
+					// Insert in order to avoid duplicate requests.
+					memoryContent.put(h, null);
+				}
 			}
 			if(!gdm.getItems().isEmpty()){
 				log.debug("Asking {} for Inventory items {}", new Object[]{e.getOrigin(), gdm.getItems()});

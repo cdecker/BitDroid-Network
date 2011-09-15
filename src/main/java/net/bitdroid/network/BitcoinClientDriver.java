@@ -104,7 +104,7 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 			}
 		}else if(event.getType() == EventType.VERACK_TYPE){
 			state.verackReceived = true;
-		}else if(event.getType() == EventType.INVENTORY_TYPE){
+		}else if(event.getType() == EventType.ADDR_TYPE){
 			try {
 				// Answer with a ping, just piggybacking it here
 				network.sendMessage(event.getOrigin(), new PingMessage());

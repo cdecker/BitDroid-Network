@@ -259,7 +259,11 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 							disconnect((SocketChannel)key.channel());
 						}
 					} else if (key.isWritable()) {
-						write(key);
+						try{
+							write(key);
+						}catch(IOException ioe){
+							disconnect((SocketChannel)key.channel());
+						}
 					}
 				}
 			} catch (Throwable e) {

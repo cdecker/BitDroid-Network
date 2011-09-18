@@ -332,6 +332,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
 				Message message = (Message)queue.poll();
+				message.setOrigin(socketChannel);
 				publishSentEvent(message);
 				ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
 				message.toWire(new LittleEndianOutputStream(outBuffer));

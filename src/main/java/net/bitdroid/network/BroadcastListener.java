@@ -21,9 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.BlockMessage;
 import net.bitdroid.network.messages.GetDataMessage;
@@ -32,6 +29,9 @@ import net.bitdroid.network.messages.InventoryMessage.InventoryItem;
 import net.bitdroid.network.messages.Message;
 import net.bitdroid.network.messages.Transaction;
 import net.bitdroid.utils.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author cdecker
@@ -54,6 +54,9 @@ public class BroadcastListener implements BitcoinEventListener {
 
 	private HashMap<String, Message> memoryContent = new HashMap<String, Message>();
 	private Queue<String> memoryOrder = new LinkedList<String>();
+	private long lastBroadcast = System.currentTimeMillis();
+	private InventoryMessage delayedInventoryMessage = new InventoryMessage();
+	private static long MININMUM_DELAY_MILLI = 15*1000;
 	/* (non-Javadoc)
 	 * @see net.bitdroid.network.BitcoinEventListener#eventReceived(net.bitdroid.network.Event)
 	 */
@@ -62,7 +65,7 @@ public class BroadcastListener implements BitcoinEventListener {
 			for(InventoryItem ii : ((GetDataMessage)e).getItems()){
 				Message m = memoryContent.get(new String(ii.getHash()));
 				if(m != null){
-					log.debug("Peer {} asked for {}, sending item back", e.getOrigin(), ii.getHash());
+					log.debug("Peer {} asked for {}, sending item back", e.getOrigin(), StringUtils.getHexString(ii.getHash()));
 					network.sendMessage(e.getOrigin(), m);
 				}
 				if(m != null)
@@ -110,9 +113,12 @@ public class BroadcastListener implements BitcoinEventListener {
 			if(memoryOrder.size() > memorySize)
 				memoryContent.remove(memoryOrder.poll());
 			// now that we have the Inventory Item for sure, broadcast an announcement:
-			InventoryMessage im = new InventoryMessage();
-			im.getItems().add(im.new InventoryItem(type, hash));
-			network.broadcast(im, e.getOrigin());
+			delayedInventoryMessage.getItems().add(delayedInventoryMessage.new InventoryItem(type, hash));
+			if(System.currentTimeMillis() > lastBroadcast + MININMUM_DELAY_MILLI){
+				network.broadcast(delayedInventoryMessage, e.getOrigin());
+				lastBroadcast = System.currentTimeMillis();
+				delayedInventoryMessage = new InventoryMessage();
+			}
 		}
 	}
 

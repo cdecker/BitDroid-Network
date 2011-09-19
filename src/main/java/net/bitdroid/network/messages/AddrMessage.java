@@ -86,9 +86,10 @@ public class AddrMessage extends Message {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("AddrMessage[");
-		sb.append("addresses=").append(addresses.size()).append(" ");
-		for(PeerAddress a : addresses)
-			sb.append(a.toString()).append(" ");
+		sb.append("addresses=").append(addresses.size());
+//		sb.append(" ");
+//		for(PeerAddress a : addresses)
+//			sb.append(a.toString()).append(" ");
 		sb.append("]");
 		return sb.toString();
 	}

@@ -105,8 +105,8 @@ public class ThreadedBitcoinNetwork extends BitcoinNetwork implements Runnable {
 		// Just set the socket to require checksum flag
 		if(message.getType() == EventType.VERACK_TYPE)
 			state.currentState = SocketState.OPEN;
-
-		message.setOrigin(this);
+		if(socket != null)
+			message.setOrigin(new PeerInfo(socket.getInetAddress(), socket.getPort()));
 
 		message.setPayloadSize(size);
 		// And now each message knows how to read its format:

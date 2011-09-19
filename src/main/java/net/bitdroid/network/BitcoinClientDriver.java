@@ -21,7 +21,6 @@ package net.bitdroid.network;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,9 +64,9 @@ public class BitcoinClientDriver implements BitcoinEventListener {
 				p.setPort(8333);
 				p.setServices(1L);
 				version.setMyAddress(p);
-				SocketChannel sc = (SocketChannel)event.getOrigin();
+				PeerInfo peer = event.getOrigin();
 				p = new PeerAddress();
-				p.setAddress(sc.socket().getInetAddress());
+				p.setAddress(peer.getAddress());
 				p.setPort(8333);
 				p.setServices(1L);
 				version.setYourAddress(p);

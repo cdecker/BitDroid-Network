@@ -46,7 +46,7 @@ public abstract class BitcoinNetwork {
 	public static final int PROTOCOL_VERSION = 31700;
 	public abstract void sendMessage(Message event) throws IOException;
 
-	public void sendMessage(Object destination, Message message) throws IOException{
+	public void sendMessage(PeerInfo destination, Message message) throws IOException{
 		message.setOrigin(destination);
 		sendMessage(message);
 	}

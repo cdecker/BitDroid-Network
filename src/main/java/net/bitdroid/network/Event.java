@@ -34,7 +34,7 @@ public class Event {
 	 */
 	private boolean propagate = true;
 	private EventType type;
-	private Object origin;
+	private PeerInfo origin;
 
 
 	public static enum EventType {
@@ -55,14 +55,14 @@ public class Event {
 		PART_TYPE // Used to indicate that the message is not a standalone message.
 	};
 
-	public Event(Object origin, EventType type){
+	public Event(PeerInfo origin, EventType type){
 		setOrigin(origin);
 		setType(type);
 	}
 
 	public Event(){}
 
-	public Event(Object o, EventType type, Message m){
+	public Event(PeerInfo o, EventType type, Message m){
 		setOrigin(o);
 		setType(type);
 	}
@@ -88,14 +88,14 @@ public class Event {
 	 *
 	 * @return the origin
 	 */
-	public Object getOrigin() {
+	public PeerInfo getOrigin() {
 		return origin;
 	}
 
 	/**
 	 * @param origin the origin to set
 	 */
-	public void setOrigin(Object origin) {
+	public void setOrigin(PeerInfo origin) {
 		this.origin = origin;
 	}
 

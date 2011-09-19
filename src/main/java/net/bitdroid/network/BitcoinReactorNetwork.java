@@ -40,6 +40,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
+import net.bitdroid.network.BitcoinNetwork.SocketState;
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.Message;
 import net.bitdroid.network.messages.PeerAddress;
@@ -65,11 +66,16 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	private Logger log = LoggerFactory.getLogger(BitcoinReactorNetwork.class);
 
 	// A list of PendingChange instances
-	private List<ChangeRequest> pendingChanges = new LinkedList<ChangeRequest>();
+	private Queue<ChangeRequest> pendingChanges = new LinkedList<ChangeRequest>();
 	// Pending messages to be sent:
-	private Map<SocketChannel, Queue<Event>> pendingMessages = new HashMap<SocketChannel, Queue<Event>>();
+	//	private Map<PeerInfo, Queue<Event>> pendingMessages = new HashMap<PeerInfo, Queue<Event>>();
 	// Tracking the state of the sockets
-	private Map<SocketChannel, SocketState> socketStates = new HashMap<SocketChannel, SocketState>();
+	//	private Map<PeerInfo, SocketState> socketStates = new HashMap<PeerInfo, SocketState>();
+	private Map<SocketChannel, BitcoinReactorPeerInfo> peers = new HashMap<SocketChannel, BitcoinReactorPeerInfo>();
+	//	/**
+	//	 * A map of buffers for messages that are in flight, not yet completely read.
+	//	 */
+	//	protected Map<SocketChannel, IncompleteMessage> incompleteBuffer = new HashMap<SocketChannel, IncompleteMessage>();
 
 	public BitcoinReactorNetwork(int port) throws IOException {
 		this.port = port;
@@ -96,21 +102,16 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 
 	}
 
-	/**
-	 * A map of buffers for messages that are in flight, not yet completely read.
-	 */
-	protected Map<SocketChannel, IncompleteMessage> incompleteBuffer = new HashMap<SocketChannel, IncompleteMessage>();
-
 	protected Message readMessage(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-
+		BitcoinReactorPeerInfo peerInfo = peers.get(socketChannel);
 		// For the case of an incomplete read, we create an Incomplete message
 		// and then try to fill it. Should there already be an incomplete
 		// message we use that one
 		IncompleteMessage im = null;
-		if(incompleteBuffer.containsKey(socketChannel)){
-			im = incompleteBuffer.get(socketChannel);
-			incompleteBuffer.remove(socketChannel);
+		if(peerInfo.hasIncompleteMessagePending()){
+			im = peerInfo.getIncompleteMessage();
+			peerInfo.setIncompleteMessage(null);
 		}else{
 			im = new IncompleteMessage();
 
@@ -132,7 +133,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			im.size = (int)((b[3] & 0xFF) << 24 | (b[2] & 0xFF) << 16 |
 					(b[1] & 0xFF) << 8 | (b[0] & 0xFF));
 
-			if(socketStates.get(socketChannel).currentState != SocketState.HANDSHAKE){
+			if(peerInfo.getSocketState() != SocketState.HANDSHAKE){
 				im.checksum = ByteBuffer.allocate(4);
 				socketChannel.read(im.checksum);
 				// TODO add switch to check the checksum.
@@ -146,7 +147,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 
 		// If we haven't read everything, push it back in the buffer map
 		if(im.buffer.position() < im.buffer.capacity()){
-			incompleteBuffer.put(socketChannel, im);
+			peerInfo.setIncompleteMessage(im);
 			return null;
 		}else{
 			// We finished reading this message, prepare and process it:
@@ -158,10 +159,10 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 			LittleEndianInputStream leis = LittleEndianInputStream.wrap(im.buffer);
 			// Boilerplate to select the right message to initialize.
 			Message message = createMessage(im.command);
-			message.setOrigin(socketChannel);
+			message.setOrigin(peerInfo);
 			// Just set the socket to require checksum flag
 			if(message instanceof VerackMessage)
-				socketStates.get(socketChannel).currentState = SocketState.OPEN;
+				peerInfo.setSocketState(SocketState.OPEN);
 
 			message.setPayloadSize(im.size);
 			// And now each message knows how to read its format:
@@ -199,9 +200,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 						}catch(CancelledKeyException cke){
 							log.info("Key already cancelled. This can be ignored. Cleanup will continue.", cke);
 						}
-						pendingMessages.remove(change.socket);
-						socketStates.remove(change.socket);
-						incompleteBuffer.remove(change.socket);
+						peers.remove(change.socket);
 					}
 					break;
 				}
@@ -227,7 +226,7 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 				while (selectedKeys.hasNext()) {
 					SelectionKey key = (SelectionKey) selectedKeys.next();
 					selectedKeys.remove();
-
+					BitcoinReactorPeerInfo peerInfo = peers.get(key.channel());
 					if (!key.isValid())
 						continue;
 
@@ -236,16 +235,17 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 						try {
 							SocketChannel channel =(SocketChannel) key.channel();
 							channel.finishConnect();
-							socketStates.put(channel, new SocketState());
+							peerInfo = new BitcoinReactorPeerInfo(channel);
+							peers.put(channel, peerInfo);
 						} catch (IOException e) {
-							publishReceivedEvent(new Event(key.channel(), EventType.FAILED_CONNECTION_TYPE, null));
+							publishReceivedEvent(new Event(null, EventType.FAILED_CONNECTION_TYPE, null));
 							// Cancel the channel's registration with our selector
 							key.cancel();
 							continue;
 						}
 						//key.interestOps(SelectionKey.OP_READ); // By default register interest in reading, this will be overwritten by the below listeners
 						Event e = new Event();
-						e.setOrigin(key.channel());
+						e.setOrigin(peerInfo);
 						e.setType(EventType.OUTGOING_CONNECTION_TYPE);
 						publishReceivedEvent(e);
 					} else if (key.isAcceptable()) {
@@ -256,13 +256,13 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 							if(m != null)
 								publishReceivedEvent(m);
 						}catch(IOException ioe){
-							disconnect((SocketChannel)key.channel());
+							disconnect(peerInfo);
 						}
 					} else if (key.isWritable()) {
 						try{
 							write(key);
 						}catch(IOException ioe){
-							disconnect((SocketChannel)key.channel());
+							disconnect(peerInfo);
 						}
 					}
 				}
@@ -306,56 +306,53 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	 *
 	 * @param socketChannel
 	 */
-	protected void disconnect(SocketChannel socketChannel){
+	protected void disconnect(PeerInfo peerInfo){
+		BitcoinReactorPeerInfo peer = (BitcoinReactorPeerInfo)peerInfo;
 		try {
-			socketChannel.close();
-			socketChannel.keyFor(this.selector).cancel();
-			pendingMessages.remove(socketChannel);
-			socketStates.remove(socketChannel);
-			incompleteBuffer.remove(socketChannel);
+			peer.getSocketChannel().close();
+			peer.getSocketChannel().keyFor(this.selector).cancel();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		socketStates.remove(socketChannel);
+		peers.remove(peer.getSocketChannel());
 		Event e = new Event();
-		e.setOrigin(socketChannel);
+		e.setOrigin(peer);
 		e.setType(EventType.DISCONNECTED_TYPE);
 		publishReceivedEvent(e);
 	}
 
 	private void write(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
+		BitcoinReactorPeerInfo peerInfo = peers.get(socketChannel);
 
-		synchronized (this.pendingMessages) {
-			Queue<Event> queue = this.pendingMessages.get(socketChannel);
+		Queue<Event> queue = peerInfo.getPendingMessages();
 
-			// Write until there's not more data ...
-			while (!queue.isEmpty()) {
-				Message message = (Message)queue.poll();
-				publishSentEvent(message);
-				ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
-				message.toWire(new LittleEndianOutputStream(outBuffer));
-				socketChannel.write(ByteBuffer.wrap(ProtocolVersion.getMagic()));
-				// write the command
-				String command = message.getCommand();
-				socketChannel.write(ByteBuffer.wrap(command.getBytes()));
-				// Pad with 0s
-				socketChannel.write(ByteBuffer.allocate(12 - command.length()));
-				// write the size of the packet
-				int size = outBuffer.toByteArray().length;
-				socketChannel.write(ByteBuffer.wrap(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
-						(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
-				if(socketStates.get(socketChannel).currentState == SocketState.OPEN)
-					socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
-				socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
-			}
+		// Write until there's not more data ...
+		while (!queue.isEmpty()) {
+			Message message = (Message)queue.poll();
+			publishSentEvent(message);
+			ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+			message.toWire(new LittleEndianOutputStream(outBuffer));
+			socketChannel.write(ByteBuffer.wrap(ProtocolVersion.getMagic()));
+			// write the command
+			String command = message.getCommand();
+			socketChannel.write(ByteBuffer.wrap(command.getBytes()));
+			// Pad with 0s
+			socketChannel.write(ByteBuffer.allocate(12 - command.length()));
+			// write the size of the packet
+			int size = outBuffer.toByteArray().length;
+			socketChannel.write(ByteBuffer.wrap(new byte[]{(byte)(size & 0xFF),(byte)(size >> 8 & 0xFF),
+					(byte)(size >> 16 & 0xFF), (byte)(size >> 24 & 0xFF)}));
+			if(peerInfo.getSocketState() == SocketState.OPEN)
+				socketChannel.write(ByteBuffer.wrap(calculateChecksum(outBuffer.toByteArray())));
+			socketChannel.write(ByteBuffer.wrap(outBuffer.toByteArray()));
+		}
 
-			if (queue.isEmpty()) {
-				// We wrote away all data, so we're no longer interested
-				// in writing on this socket. Switch back to waiting for
-				// data.
-				key.interestOps(SelectionKey.OP_READ);
-			}
+		if (queue.isEmpty()) {
+			// We wrote away all data, so we're no longer interested
+			// in writing on this socket. Switch back to waiting for
+			// data.
+			key.interestOps(SelectionKey.OP_READ);
 		}
 	}
 	private void accept(SelectionKey key) throws IOException {
@@ -366,14 +363,14 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 		SocketChannel socketChannel = serverSocketChannel.accept();
 		/*Socket socket = */socketChannel.socket();
 		socketChannel.configureBlocking(false);
-
+		BitcoinReactorPeerInfo peerInfo =  new BitcoinReactorPeerInfo(socketChannel);
+		peers.put(socketChannel, peerInfo);
 		// Register the new SocketChannel with our Selector, indicating
 		// we'd like to be notified when there's data waiting to be read
 		socketChannel.register(this.selector, SelectionKey.OP_READ);
 
-		socketStates.put(socketChannel, new SocketState());
 		Event e = new Event();
-		e.setOrigin(socketChannel);
+		e.setOrigin(peerInfo);
 		e.setType(EventType.INCOMING_CONNECTION_TYPE);
 		publishReceivedEvent(e);
 	}
@@ -382,18 +379,14 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	 * @see net.bitdroid.network.BitcoinNetwork#sendMessage(net.bitdroid.network.messages.Event)
 	 */
 	public void sendMessage(Message event) throws IOException {
-		SocketChannel socket = (SocketChannel)event.getOrigin();
+		BitcoinReactorPeerInfo peerInfo = (BitcoinReactorPeerInfo) event.getOrigin();
 		synchronized (pendingChanges) {
 			// Indicate we want the interest ops set changed
-			pendingChanges.add(new ChangeRequest(socket, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
+			pendingChanges.add(new ChangeRequest(peerInfo.getSocketChannel(), ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
 
 			// And queue the data we want written
-			synchronized (pendingMessages) {
-				Queue<Event> queue = pendingMessages.get(socket);
-				if (queue == null) {
-					queue = new LinkedList<Event>();
-					pendingMessages.put(socket, queue);
-				}
+			Queue<Event> queue = peerInfo.getPendingMessages();
+			synchronized (queue) {
 				queue.add(event);
 			}
 		}
@@ -461,15 +454,69 @@ public class BitcoinReactorNetwork extends BitcoinNetwork implements Runnable {
 	 */
 	@Override
 	public void broadcast(Message message, Object exclude) {
-		for(SocketChannel sc : socketStates.keySet()){
-			if(sc == exclude)
+		for(BitcoinReactorPeerInfo peer : peers.values()){
+			if(peer == exclude)
 				continue;
 			try {
-				this.sendMessage(sc, message);
+				this.sendMessage(peer, message);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+
+	public class BitcoinReactorPeerInfo extends PeerInfo {
+		private SocketChannel socketChannel = null;
+		private Queue<Event> pendingMessages = new LinkedList<Event>();
+		private int socketState = SocketState.HANDSHAKE;
+		private IncompleteMessage incompleteMessage = null;
+		/**
+		 * @return the incompleteMessage
+		 */
+		public IncompleteMessage getIncompleteMessage() {
+			return incompleteMessage;
+		}
+
+		/**
+		 * @param incompleteMessage the incompleteMessage to set
+		 */
+		public void setIncompleteMessage(IncompleteMessage incompleteMessage) {
+			this.incompleteMessage = incompleteMessage;
+		}
+
+		/**
+		 * @return the socketState
+		 */
+		public int getSocketState() {
+			return socketState;
+		}
+
+		/**
+		 * @param socketState the socketState to set
+		 */
+		public void setSocketState(int socketState) {
+			this.socketState = socketState;
+		}
+
+		/**
+		 * @return the pendingMessages
+		 */
+		public Queue<Event> getPendingMessages() {
+			return pendingMessages;
+		}
+
+		public BitcoinReactorPeerInfo(SocketChannel socketChannel){
+			super(socketChannel.socket().getInetAddress(), socketChannel.socket().getPort());
+			this.socketChannel = socketChannel;
+		}
+
+		public SocketChannel getSocketChannel(){
+			return socketChannel;
+		}
+
+		public boolean hasIncompleteMessagePending(){
+			return incompleteMessage != null;
 		}
 	}
 }

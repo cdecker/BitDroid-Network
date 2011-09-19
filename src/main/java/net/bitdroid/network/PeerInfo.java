@@ -24,8 +24,8 @@ import java.net.InetAddress;
  *
  */
 public class PeerInfo {
-	private InetAddress address;
-	private int port;
+	private final InetAddress address;
+	private final int port;
 	
 	public PeerInfo(InetAddress address, int i){
 		this.address = address;
@@ -40,24 +40,10 @@ public class PeerInfo {
 	}
 
 	/**
-	 * @param address the address to set
-	 */
-	public void setAddress(InetAddress address) {
-		this.address = address;
-	}
-
-	/**
 	 * @return the port
 	 */
 	public int getPort() {
 		return port;
-	}
-
-	/**
-	 * @param port the port to set
-	 */
-	public void setPort(short port) {
-		this.port = port;
 	}
 
 	/* (non-Javadoc)

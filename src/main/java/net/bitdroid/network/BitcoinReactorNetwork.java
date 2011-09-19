@@ -34,13 +34,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-import net.bitdroid.network.BitcoinNetwork.SocketState;
 import net.bitdroid.network.Event.EventType;
 import net.bitdroid.network.messages.Message;
 import net.bitdroid.network.messages.PeerAddress;

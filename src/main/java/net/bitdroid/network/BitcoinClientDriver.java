@@ -21,7 +21,6 @@ package net.bitdroid.network;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
